@@ -13,7 +13,7 @@ db.server.aggregate([
         $unwind: {path: "$site", preserveNullAndEmptyArrays: true}
     },
     {
-         $lookup:
+         $lookup: 
             {
                 from: "client",
                 localField: "site.clientid",
