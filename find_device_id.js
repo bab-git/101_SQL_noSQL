@@ -6,10 +6,19 @@ db.server.aggregate([
                 from: "site",
                 localField: "siteid",
                 foreignField: "_id",
-                as: "site_doc"
+                as: "site"
             }    
     },
     {
-        $unwind
-    }
+        $unwind: {path: "$site", preserveNullAndEmptyArrays: true}
+    },
+    {
+         $lookup:
+            {
+                from: "client",
+                localField: "site.clientid",
+                foreignField: "_id",
+                as: "client"
+            }      
+    },
 ])
