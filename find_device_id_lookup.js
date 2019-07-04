@@ -1,5 +1,5 @@
 db.server.aggregate([
-    { $match: {_id:1178511} },
+    { $match: {_id:1178511} },    
     {
         $lookup:
             {
@@ -21,4 +21,12 @@ db.server.aggregate([
                 as: "client"
             }      
     },
+    {
+            "$project": {
+                "guid":0,
+                "lastBootTime":0,
+                "utcOffset":0,
+                "agentVersion":0,                               
+                }
+    }
 ])
