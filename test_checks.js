@@ -6,4 +6,4 @@ db.check.find(
             new Date("2019-07-01")            
         }        
     }
-).limit(3)
+)
