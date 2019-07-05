@@ -1,8 +1,8 @@
-db.workstation.aggregate([
-    { $match: {_id:1096537}},    
+// db.workstation.aggregate([
+//     { $match: {_id:1096537}},    
 //     { $match: {_id:1154763}},        
-// db.server.aggregate([
-//     { $match: {_id:1178511} },            
+db.server.aggregate([
+//     { $match: {_id:1060893} },            
     {
         $lookup:
             {
@@ -32,5 +32,6 @@ db.workstation.aggregate([
                 "utcOffset":0,
                 "agentVersion":0,                               
                 }
-    }
+    },
+    { $match: {_id:1060893}}
 ])
