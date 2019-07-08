@@ -1,7 +1,7 @@
-// db.workstation.aggregate([
+db.workstation.aggregate([
 //     { $match: {_id:1096537}},    
-//     { $match: {_id:1154763}},        
-db.server.aggregate([
+    { $match: {_id:680856}},        
+// db.server.aggregate([
 //     { $match: {_id:1060893} },            
     {
         $lookup:
@@ -23,6 +23,9 @@ db.server.aggregate([
                 foreignField: "_id",
                 as: "client"
             }      
+    },
+    {
+        $unwind: {path: "$client", preserveNullAndEmptyArrays: true}
     },
     {
             "$project": {
@@ -33,5 +36,6 @@ db.server.aggregate([
                 "agentVersion":0,                               
                 }
     },
-    { $match: {_id:1060893}}
+    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+//     { $match: {"site.enabled":true}}
 ])
