@@ -1,6 +1,6 @@
 // DBQuery.shellBatchSize = 100;
-// DBQuery.shellBatchSize = 100;
-db.check.aggregate([
+// DBQuery.shellBatchSize = 500;
+db.getCollection('check').aggregate([
 //      { $match: {_id:ObjectId("5c1bbcfbfe78c90007af2693")} },            
 //      { $match: {datetime: { "$gt" : new Date("2019-07-01")} }}
     { 
@@ -8,10 +8,11 @@ db.check.aggregate([
         {
             $and:
             [
-//                 {datetime: { "$gt" : new ISODate("2019-07-01 01:00:10.000Z")}},
-                {datetime: { "$gt" : new Date("2019-02-04")}},
-                {datetime: { "$lt" : new Date("2019-02-05")}},
-//                 {datetime: new ISODate("2019-07-01 01:00:27.000Z")},
+                {datetime: { "$gt" : new ISODate("2019-07-01 01:00:10.000Z")}},
+//                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
+//                 {datetime: { "$gt" : new ISODate("2019-02-04 01:49:00")}},
+//                 {datetime: { "$lt" : new ISODate("2019-02-04 14:50:00")}},
+//                 {datetime: new ISODate("2019-07-01 01:00:17.000Z")},
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
             ]
@@ -96,21 +97,29 @@ db.check.aggregate([
 //         ]
 //     }}, 
 
-//     { $project: { 
-//         "_id": 1, 
+    { $project: { 
+        "_id": 1, 
 //         "checkid": 1, 
 //         "deviceid": 1,
-//         "description": 1, 
-//         "extra": 1,
-//         "datetime": 1,
-//         client_name : "$client.name"        
-//         }    
-//     },
-
-    { $match: 
-        { "client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}
+        "description": 1, 
+        "extra": 1,
+        "datetime": 1,
+        "cname" : "$client.name",    
+        "apiKey" : "$client.apiKey",
+        "workstation": 1 ,
+        "server":1
+//         "siteid": "$workstation.siteid",     
+        }    
     },
+
+//     { $match: 
+//         { "client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}
+//     },
     
 //     { $match: {checkstatus:"testerror"}},
-//     { $match: {"Sclient.name":"Hans Erlenbach Entwicklung GmbH"}}
+//        { $match: {description : /Festplattenspei/}},
+//        { $match: {cname : /Redd/}},
+//      { $match: {"client.name":"FH-057 PC-SPEZIALIST VERL"}}
+//     {$sort: { checkstatus : -1 }}
+     {$limit: 30}
 ])
