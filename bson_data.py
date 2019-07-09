@@ -8,6 +8,7 @@ Created on Mon Jul  8 17:22:35 2019
 import json
 import pandas as pd
 import numpy as np
+from pymongo import Connection
 #import matplotlib.pyplot as plt
 #from PIL import Image
 import io, bson, multiprocessing
