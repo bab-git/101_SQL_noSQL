@@ -105,20 +105,24 @@ db.getCollection('check').aggregate([
         "extra": 1,
         "datetime": 1,
         "cname" : "$client.name",    
-        "apiKey" : "$client.apiKey",
-        "workstation": 1 ,
-        "server":1,
+        "apiKey" : "$client.apiKey",
+        "workstation": 1 ,
+        "server":1,
         "enabled": "$site.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
     },
 
-    { $match: 
-        { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
-    },
-    { $match: 
-        { enabled:true}
-    },
+//     { $match: 
+//         { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
+//     },
+//     { $match: 
+//         { enabled:true}
+//     },
+       {
+           $match: 
+           {"client.name" : "* PCS-Testpartner (EK1234)"}
+       },
     
 //     { $match: {checkstatus:"testerror"}},
 //        { $match: {description : /Festplattenspei/}},

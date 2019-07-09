@@ -1,5 +1,6 @@
 // DBQuery.shellBatchSize = 100;
-db.check.aggregate([
+db.check.explain().aggregate([
+// db.check.aggregate([
 //      { $match: {_id:ObjectId("5c1bbcfbfe78c90007af2693")} },            
 //      { $match: {datetime: { "$gt" : new Date("2019-07-01")} }}
     { 
@@ -107,10 +108,10 @@ db.check.aggregate([
 
     { $project: { 
         "deviceid": 1, 
-//         "_class": 1, 
+//         "_class": 1, 
         "description":1,
          "siteid": "$workstation.siteid", 
-         "workstation": 1,
+         "workstation": 1,
          "wname": "$workstation.name"
 //         "percent2": "$workstation.name"
     }},    
@@ -125,7 +126,7 @@ db.check.aggregate([
 //     },
 //     { $match: {checkstatus:"testerror"}},
 //     { $match: {"Sclient.name":"Hans Erlenbach Entwicklung GmbH"}}
-//        { $match: {description : /Festplattenspei/}},
+//        { $match: {description : /Festplattenspei/}},
 //        { $match: {wname : /STEPHAN/}},
 //        {$limit: 10}
 ])
