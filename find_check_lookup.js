@@ -107,14 +107,18 @@ db.getCollection('check').aggregate([
         "cname" : "$client.name",    
         "apiKey" : "$client.apiKey",
         "workstation": 1 ,
-        "server":1
+        "server":1,
+        "enabled": "$site.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
     },
 
-//     { $match: 
-//         { "client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}
-//     },
+    { $match: 
+        { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
+    },
+    { $match: 
+        { enabled:true}
+    },
     
 //     { $match: {checkstatus:"testerror"}},
 //        { $match: {description : /Festplattenspei/}},
