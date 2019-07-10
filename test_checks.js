@@ -15,8 +15,11 @@ db.getCollection('check').find(
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
 //                {description : /Festplattenspei/},
-               {checkstatus : "testerror"}
+//                {checkstatus : "testerror"}
+//                {deviceid: 1101479},
+               {checkid: "28226123"}
             ]                         
         }        
 //     }
-    ).count()
+    )
+//         .count()
