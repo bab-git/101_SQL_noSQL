@@ -15,7 +15,8 @@ db.getCollection('check').aggregate([
 //                 {datetime: new ISODate("2019-07-01 01:00:17.000Z")},
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
-                {checkstatus: {$ne:"testok"}}
+                {checkstatus: {$ne:"testok"}},
+                {consecutiveFails:0}
             ]
 //                         
         }
@@ -100,17 +101,20 @@ db.getCollection('check').aggregate([
 
     { $project: { 
         "_id": 1, 
-//         "checkid": 1, 
+        "checkid": 1, 
         "checkstatus": 1,
         "deviceid": 1,
         "description": 1, 
-        "extra": 1,
+        "extra": 1,
+        "consFail":"consecutiveFails",
         "servertime": 1,
         "datetime": 1,
         "clname" : "$client.name",    
         "apiKey" : "$client.apiKey",
-        "workstation": 1 ,
-        "server":1,
+//         "workstation": 1 ,
+        "workstation":"$workstation.name",
+//         "server":1,
+        "server":"$server.name",
         "enabled": "$site.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
@@ -133,5 +137,5 @@ db.getCollection('check').aggregate([
 //        { $match: {cname : /Redd/}},
 //      { $match: {"client.name":"FH-057 PC-SPEZIALIST VERL"}}
 //     {$sort: { checkstatus : -1 }}
-     {$limit: 30}
+     {$limit: 50}
 ])
