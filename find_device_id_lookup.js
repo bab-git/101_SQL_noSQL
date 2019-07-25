@@ -1,6 +1,6 @@
 db.workstation.aggregate([
 //     { $match: {_id:1096537}},    
-    { $match: {_id:881738}},        
+    { $match: {_id:323418}},        
 // db.server.aggregate([
 //     { $match: {_id:881738} },            
     {
@@ -36,6 +36,6 @@ db.workstation.aggregate([
                 "agentVersion":0,                               
                 }
     },
-//     { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
-//     { $match: {"site.enabled":true}}
+    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+//     { $not: {"checkstatus":"testok"}}
 ])
