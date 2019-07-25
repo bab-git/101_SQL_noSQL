@@ -8,13 +8,14 @@ db.getCollection('check').aggregate([
         {
             $and:
             [
-                {datetime: { "$gt" : new ISODate("2019-07-01 01:00:10.000Z")}},
+                {datetime: { "$gt" : new ISODate("2019-07-20 01:00:10.000Z")}},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:49:00")}},
 //                 {datetime: { "$lt" : new ISODate("2019-02-04 14:50:00")}},
 //                 {datetime: new ISODate("2019-07-01 01:00:17.000Z")},
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
+                {checkstatus: {$ne:"testok"}}
             ]
 //                         
         }
@@ -100,11 +101,13 @@ db.getCollection('check').aggregate([
     { $project: { 
         "_id": 1, 
 //         "checkid": 1, 
-//         "deviceid": 1,
+        "checkstatus": 1,
+        "deviceid": 1,
         "description": 1, 
         "extra": 1,
+        "servertime": 1,
         "datetime": 1,
-        "cname" : "$client.name",    
+        "clname" : "$client.name",    
         "apiKey" : "$client.apiKey",
         "workstation": 1 ,
         "server":1,
@@ -113,16 +116,17 @@ db.getCollection('check').aggregate([
         }    
     },
 
-//     { $match: 
-//         { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
-//     },
+    { $match: 
+        { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
+    },
+    
 //     { $match: 
 //         { enabled:true}
 //     },
-       {
-           $match: 
-           {"client.name" : "* PCS-Testpartner (EK1234)"}
-       },
+//        {
+//            $match: 
+//            {"client.name" : "* PCS-Testpartner (EK1234)"}
+//        },
     
 //     { $match: {checkstatus:"testerror"}},
 //        { $match: {description : /Festplattenspei/}},
