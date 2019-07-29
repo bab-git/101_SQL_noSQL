@@ -8,15 +8,17 @@ db.getCollection('check').aggregate([
         {
             $and:
             [
-                {datetime: { "$gt" : new ISODate("2019-07-20 01:00:10.000Z")}},
+                {datetime: { "$gt" : new ISODate("2019-06-16 01:00:10.000Z")}},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:49:00")}},
 //                 {datetime: { "$lt" : new ISODate("2019-02-04 14:50:00")}},
 //                 {datetime: new ISODate("2019-07-01 01:00:17.000Z")},
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
-                {checkstatus: {$ne:"testok"}},
-                {consecutiveFails:0}
+//                 {checkstatus: {$ne:"testok"}}
+//                 {workst_nm:"BUERO-3"}
+//                 {consecutiveFails:0}
+                {deviceid:1156225}
             ]
 //                         
         }
@@ -102,26 +104,31 @@ db.getCollection('check').aggregate([
     { $project: { 
         "_id": 1, 
         "checkid": 1, 
-        "checkstatus": 1,
+        "checkstatus": 1,
         "deviceid": 1,
         "description": 1, 
-        "extra": 1,
+        "extra": 1,
         "consFail":"consecutiveFails",
         "servertime": 1,
         "datetime": 1,
         "clname" : "$client.name",    
         "apiKey" : "$client.apiKey",
-//         "workstation": 1 ,
-        "workstation":"$workstation.name",
-//         "server":1,
-        "server":"$server.name",
+//         "workstation": 1 ,
+        "workst_nm":"$workstation.name",
+//         "server":1,
+        "server_nm":"$server.name",
         "enabled": "$site.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
     },
 
-    { $match: 
-        { apiKey:"ae0a4c75230afae756fcfecd3d2838cf"}
+    { $match:
+       { $and:
+           [
+            {apiKey:"ae0a4c75230afae756fcfecd3d2838cf"},
+//             {workst_nm:"BUERO-3"}
+           ]
+       }
     },
     
 //     { $match: 
@@ -136,6 +143,6 @@ db.getCollection('check').aggregate([
 //        { $match: {description : /Festplattenspei/}},
 //        { $match: {cname : /Redd/}},
 //      { $match: {"client.name":"FH-057 PC-SPEZIALIST VERL"}}
-//     {$sort: { checkstatus : -1 }}
+     {$sort: { datetime : -1 }},
      {$limit: 50}
 ])

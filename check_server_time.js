@@ -10,4 +10,4 @@ db.getCollection('check').find(
             {deviceid:563882}
         ]
     }        
-).limit(100)
+).limit(50)
