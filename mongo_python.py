@@ -5,13 +5,42 @@ Created on Tue Jul 30 13:55:19 2019
 @author: Babak Hosseini
 """
 
-#import pymongo
-from pymongo import Connection
+import pymongo
+#from pymongo import Connection
 from pymongo import MongoClient
-client = MongoClient('mongodb://192.168.2.208:27018')
+import pprint
 
-db = client.sms
+Mclient = MongoClient('mongodb://192.168.2.208:27018')
 
-collection = db.clients
+db = Mclient.sms
+db.list_collection_names()
+
+clients = db['client']
+checks = db['check']
+#%%=======================
+pprint.pprint(clients.find_one(
+        {
+#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
+            "name":"101 - Busold Consulting"
+        }))
+#%%=======================
+result = checks.find_one(
+        {
+#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
+            "deviceid":1156225
+        })
+
+pprint.pprint(result)
+#%%============
+result = checks.find(
+        {
+            "deviceid":1156225
+        }
+        ).count()
+
+pprint.pprint(result)
+#%%============
+print(client.f)
+
 #connection = Connection()
 #connection = Connection()
