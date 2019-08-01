@@ -36,7 +36,7 @@ result = checks.find(
         {
             "deviceid":1156225
         }
-        ).count()
+        ).limit(2)
 
 pprint.pprint(result)
 #%%============
