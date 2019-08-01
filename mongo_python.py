@@ -42,9 +42,23 @@ for result in results:
     pprint.pprint(result)
 #%%============
 clients.count_documents({})
-#%%============ 
+#%%============ ?? list of enabled devices
 
-#%%============
+#%%============ find last entry
+agg_result = 
+????from bson.son import SON
+>>> pipeline = [
+...     {"$unwind": "$tags"},
+...     {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+...     {"$sort": SON([("count", -1), ("_id", -1)])}
+... ]
+>>> import pprint
+>>> pprint.pprint(list(db.things.aggregate(pipeline)))
+[{u'_id': u'cat', u'count': 3},
+ {u'_id': u'dog', u'count': 2},
+ {u'_id': u'mouse', u'count': 1}]
+
+
 #print(client.f)
 
 #connection = Connection()
