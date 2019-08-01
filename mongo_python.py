@@ -32,15 +32,20 @@ result = checks.find_one(
 
 pprint.pprint(result)
 #%%============
-result = checks.find(
+results = checks.find(
         {
             "deviceid":1156225
         }
         ).limit(2)
 
-pprint.pprint(result)
+for result in results:
+    pprint.pprint(result)
 #%%============
-print(client.f)
+clients.count_documents({})
+#%%============ 
+
+#%%============
+#print(client.f)
 
 #connection = Connection()
 #connection = Connection()

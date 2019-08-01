@@ -3,19 +3,30 @@ db.getCollection('check').find(
          $and: 
          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
-            {servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}},
-            {servertime: {"$lt": new ISODate("2019-07-27 04:14:55.000Z")}},
-//             {checkstatus: {$ne:"testok"}}
+            {servertime: {
+                            "$gte": new ISODate("2019-07-31 01:00:00.000Z"),
+                            "$lte": new ISODate("2019-07-31 23:59:59.000Z")
+                          }},
+            {checkstatus: {$ne:"testok"}},
 //             {description: {$search:"Anti"}},
-//             {checkid:"30073493"},
+//             {checkid:"29671730"},
 //             {description:{$not:/Anti/}},
-            {deviceid:1156225},
+            {deviceid:1035046},
+//             {deviceid:{"$gte":1035046}},
          ],
 //         $not:
 //             description:{$nin:[/Anti/]}
 //             description:{$not:/Anti/}
     },
-    {}    
-).limit(50)
+    {
+//         deviceid:{$dsc247}
+    }    
+)
+// .count()
+//     .limit(50)
 //     .sort({datetime: 1})
-    .sort({checkid: 1})    
+//     .sort({checkid: 1})
+.project(
+        {
+            deviceid:1
+        })
