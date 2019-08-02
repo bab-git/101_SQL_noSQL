@@ -4,21 +4,22 @@ db.getCollection('check').aggregate([
 //      { $match: {_id:ObjectId("5c1bbcfbfe78c90007af2693")} },            
 //      { $match: {datetime: { "$gt" : new Date("2019-07-01")} }}
     { 
-        $match:
+        $match:
         {
-            $and:
+                    $and:
             [
-                {datetime: { "$gt" : new ISODate("2019-06-16 01:00:10.000Z")}},
+                {servertime: { "$gt" : new ISODate("2019-07-31 01:00:10.000Z"),
+                              "$lte" : new ISODate("2019-07-31 23:10:52.000Z") }},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:49:00")}},
 //                 {datetime: { "$lt" : new ISODate("2019-02-04 14:50:00")}},
-//                 {datetime: new ISODate("2019-07-01 01:00:17.000Z")},
+//                 {servertime: new ISODate("2019-07-31 18:10:52.000Z")},
 //                 {emailalerts: 1}
 //                 {checkid: {$in: ["23538852","22261308"]}}
-//                 {checkstatus: {$ne:"testok"}}
+                {checkstatus: {$ne:"testok"}},
 //                 {workst_nm:"BUERO-3"}
-//                 {consecutiveFails:0}
-                {deviceid:1156225}
+//                 {consecutiveFails:0}
+                {deviceid:1035046}
             ]
 //                         
         }
@@ -117,17 +118,20 @@ db.getCollection('check').aggregate([
         "workst_nm":"$workstation.name",
 //         "server":1,
         "server_nm":"$server.name",
-        "enabled": "$site.enabled"
+        "Senabled": "$site.enabled",
+        "Cenabled": "$client.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
     },
 
-    { $match:
-       { $and:
-           [
+    { $match:
+       { $and:
+           [
             {apiKey:"ae0a4c75230afae756fcfecd3d2838cf"},
-//             {workst_nm:"BUERO-3"}
-           ]
+//             {"Senabled": false},
+//             {"Cenabled": true}
+//             {workst_nm:"BUERO-3"}
+           ]
        }
     },
     

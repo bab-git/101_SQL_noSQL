@@ -1,6 +1,6 @@
 db.workstation.aggregate([
 //     { $match: {_id:1096537}},    
-    { $match: {_id:1035046}},
+//     { $match: {_id:1035046}},
 // db.server.aggregate([
 //     { $match: {_id:881738} },            
     {
@@ -29,13 +29,15 @@ db.workstation.aggregate([
     },
     {
             "$project": {
-                "_class":0,
+                "_class":0, 
                 "guid":0,
                 "lastBootTime":0,
                 "utcOffset":0,
                 "agentVersion":0,                               
                 }
     },
-    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+//     { $match: {"client.apiKey":{$not:/ae/}}},
+    { $match: {"site.enabled" : true}},
+    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},    
 //     { $not: {"checkstatus":"testok"}}
 ])
