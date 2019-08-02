@@ -19,8 +19,8 @@ db.getCollection("check").aggregate(
             {
               _id:"$deviceid",
 //               "dcs247":"  
-              max:{$max:"$servertime"},
-//               ObId:"$_id"
+              max_time:{$max:"$servertime"},
+              count: {$sum:1},
             }            
         },    
             
