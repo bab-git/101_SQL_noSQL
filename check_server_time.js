@@ -3,11 +3,11 @@ db.getCollection('check').find(
          $and: 
          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
-            {servertime: {
+            {datetime: {
                             "$gte": new ISODate("2019-07-31 01:00:00.000Z"),
                             "$lte": new ISODate("2019-07-31 23:59:59.000Z")
                           }},
-            {checkstatus: {$ne:"testok"}},
+//             {checkstatus: {$ne:"testok"}},
 //             {description: {$search:"Anti"}},
 //             {checkid:"29671730"},
 //             {description:{$not:/Anti/}},
@@ -23,10 +23,6 @@ db.getCollection('check').find(
     }    
 )
 // .count()
-//     .limit(50)
+    .limit(50)
 //     .sort({datetime: 1})
-//     .sort({checkid: 1})
-.project(
-        {
-            deviceid:1
-        })
+//     .sort({checkid: 1})
