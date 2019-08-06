@@ -4,11 +4,11 @@ db.getCollection('check').aggregate([
 //      { $match: {_id:ObjectId("5c1bbcfbfe78c90007af2693")} },            
 //      { $match: {datetime: { "$gt" : new Date("2019-07-01")} }}
     { 
-        $match:
+        $match:
         {
                     $and:
             [
-                {servertime: { "$gt" : new ISODate("2019-07-31 01:00:10.000Z"),
+                {servertime: { "$gt" : new ISODate("2019-07-31 01:00:10.000Z"),
                               "$lte" : new ISODate("2019-07-31 23:10:52.000Z") }},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:49:00")}},
@@ -118,7 +118,7 @@ db.getCollection('check').aggregate([
         "workst_nm":"$workstation.name",
 //         "server":1,
         "server_nm":"$server.name",
-        "Senabled": "$site.enabled",
+        "Senabled": "$site.enabled",
         "Cenabled": "$client.enabled"
 //         "siteid": "$workstation.siteid",     
         }    
@@ -127,8 +127,8 @@ db.getCollection('check').aggregate([
     { $match:
        { $and:
            [
-            {apiKey:"ae0a4c75230afae756fcfecd3d2838cf"},
-//             {"Senabled": false},
+            {apiKey:"ae0a4c75230afae756fcfecd3d2838cf"},
+//             {"Senabled": false},
 //             {"Cenabled": true}
 //             {workst_nm:"BUERO-3"}
            ]

@@ -89,9 +89,53 @@ pipeline2 = [
 agg_result = list(db.check.aggregate(pipeline2))[0]
 T_end_1 = agg_result['max_time']
 Ts=T_end.hour-T_end_1.hour   # sampling time
-#%%==================== another sample
+#%%==================== List of active devices for the month
+# getting list of device ids for WK ans servers
+pipelin3 = [
+           {
+           "$lookup":
+                     {
+                       "from": "site",
+                       "localField": "siteid",
+                       "foreignField": "_id",
+                       "as": "site"
+                      }    
+            },
+            {
+                "$unwind": {path: "$site", preserveNullAndEmptyArrays: true}
+            },
+            {
+                 "$lookup": 
+                    {
+                        "from": "client",
+                        "localField": "site.clientid",
+                        "foreignField": "_id",
+                        "as": "client"
+                    }      
+            },
+#            {
+#                $unwind: {path: "$client", preserveNullAndEmptyArrays: true}
+#            },
+            {"$match": {"site.enabled" : True}},
+            {"$match": {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+            {"$match": {"dscLocalDate": {"$gt":datetime(2019,7,1)}}},
+#            {"$count": "device count"},
+            {
+                    "$project": {
+                                    "device_name":"$name",
+                                    "site_name":"$site.name",
+                                    "client_name":"$client.name",
+#                                    "name" : 1
+                                }
+            },            
+         ] 
+agg_result = list(db.workstation.aggregate(pipelin3))
+print(agg_result[0])
+#%%==================== Check the running operations
 a=db.current_op()
 print(len(a['inprog']))
+if len(a['inprog']) > 1:
+    print("Still running operations")
 #agg_expl = db.command('aggregate','check',pipeline=pipeline, explain=True)
 
 #            {"$group": {"_id":"$deviceid", "max_time":{"$max":"$servertime"}}}    

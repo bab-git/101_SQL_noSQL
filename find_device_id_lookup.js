@@ -36,8 +36,10 @@ db.workstation.aggregate([
                 "agentVersion":0,                               
                 }
     },
-//     { $match: {"client.apiKey":{$not:/ae/}}},
-    { $match: {"site.enabled" : true}},
-    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},    
-//     { $not: {"checkstatus":"testok"}}
+//     { $match: {"client.apiKey":{$not:/ae/}}},
+    { $match: {"site.enabled" : true}},
+    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+//     {$match: {dscLocalDate: {"$gt":ISODate("2019-08-01 01:00:10.000Z")}}},
+//     { $not: {"checkstatus":"testok"}}
+//     {$count: "device count"}
 ])
