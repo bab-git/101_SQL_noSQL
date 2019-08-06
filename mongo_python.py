@@ -102,7 +102,7 @@ pipelin3 = [
                       }    
             },
             {
-                "$unwind": {path: "$site", preserveNullAndEmptyArrays: true}
+                "$unwind": {"path": "$site", "preserveNullAndEmptyArrays": True}
             },
             {
                  "$lookup": 
@@ -113,9 +113,9 @@ pipelin3 = [
                         "as": "client"
                     }      
             },
-#            {
-#                $unwind: {path: "$client", preserveNullAndEmptyArrays: true}
-#            },
+            {
+                "$unwind": {"path": "$client", "preserveNullAndEmptyArrays": True}
+            },
             {"$match": {"site.enabled" : True}},
             {"$match": {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
             {"$match": {"dscLocalDate": {"$gt":datetime(2019,7,1)}}},
@@ -129,8 +129,29 @@ pipelin3 = [
                                 }
             },            
          ] 
-agg_result = list(db.workstation.aggregate(pipelin3))
-print(agg_result[0])
+device_list = list(db.workstation.aggregate(pipelin3))
+print(device_list [0])
+#%%==================== loop of getting faield checks - for the month
+#for i in range(len(device_list)):
+i = 2
+device_id = device_list[i]["_id"]
+results = checks.find(
+            {
+                "servertime": {
+                                "$gte": datetime(2019,7,31,1,0,0),
+                                "$lte": datetime(2019,7,31,23,59,59)
+                                },    
+                "deviceid":device_id,
+                "checkstatus": {"$ne":"testok"}
+                
+            }
+            )
+check_results = list(results)
+print(len(check_results))
+if len(check_results) > 0:
+    
+ 
+
 #%%==================== Check the running operations
 a=db.current_op()
 print(len(a['inprog']))
