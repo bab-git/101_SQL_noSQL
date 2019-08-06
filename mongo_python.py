@@ -5,6 +5,7 @@ Created on Tue Jul 30 13:55:19 2019
 @author: Babak Hosseini
 """
 from datetime import datetime
+import pandas as pd
 import pymongo
 #from pymongo import Connection
 from pymongo import MongoClient
@@ -129,12 +130,20 @@ pipelin3 = [
                                 }
             },            
          ] 
-device_list = list(db.workstation.aggregate(pipelin3))
+WK_list = list(db.workstation.aggregate(pipelin3))
+SV_list = list(db.server.aggregate(pipelin3))
+WK_db = pd.DataFrame(WK_list)
+WK_db['Type'] = "workstation"
+#WK_db = pd.DataFrame({values:WK_db.values, 'Type':'Workstation'}, index = index)
+SV_db = pd.DataFrame(SV_list)
+SV_db['Type'] = "server"
+device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 print(device_list [0])
 #%%==================== loop of getting faield checks - for the month
-#for i in range(len(device_list)):
+#for i in range(len(device_db)):
 i = 2
-device_id = device_list[i]["_id"]
+#device_id = WK_list[i]['_id']
+device_id = int(device_db['_id'][i])
 results = checks.find(
             {
                 "servertime": {
@@ -149,7 +158,12 @@ results = checks.find(
 check_results = list(results)
 print(len(check_results))
 if len(check_results) > 0:
+    check_SQL=pd.DataFrame(check_results, columns = ['servertime','checkstatus','deviceid','dsc247','extra'])
     
+    
+pd.DataFrame({values:df_her1.values,
+                           'Percentage':price_ratio},
+                            index = shorten_names).sort_values(by = 'preis',ascending=False)      
  
 
 #%%==================== Check the running operations
