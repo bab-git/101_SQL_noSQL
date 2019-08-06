@@ -3,14 +3,14 @@ db.getCollection('check').find(
 //     {     
 //         $match:
         {
-            $and:
-            [
+//             $and:
+//             [
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:00:10.000Z")}},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
-               {datetime: { 
-                            "$gte" : new ISODate("2019-07-31 00:00:00"),
-                            "$lt" : new ISODate("2019-08-01 00:00:00")
-                           }},
+               servertime: { 
+                            "$gte" : new ISODate("2019-07-31 00:00:00"),
+                            "$lt" : new ISODate("2019-07-31 23:59:59")
+                           },
 //                {datetime: { "$lt" : new ISODate("2019-02-04 18:50:00")}},
 //                    {datetime: { "$gt" : new Date("2018-12-03")}},
 //                 {datetime: { "$lt" : Date("2019-02-05")}},
@@ -19,20 +19,20 @@ db.getCollection('check').find(
 //                 {checkid: {$in: ["23538852","22261308"]}}
 //                {description : /Festplattenspei/},
 //                {checkstatus : "testerror"}
-//                {deviceid: 895663},
+               deviceid: 323418,
 //                {checkid: "28226123"}
-               {checkstatus: {$ne:"testok"}}
-            ]                         
-        },     
+               checkstatus: {$ne:"testok"}
+//             ]                         
+        }     
 //     }
 //         { $not:
 //             [
 //                 {$match:{"$checkstatus":"testok"}}
 //             ]        
-//         }
-//         {
-//             datetime:1
 //         }
-    )
-        .limit(50)
-//         .count()
+//         {
+//             datetime:1
+//         }
+    )
+//         .limit(50)
+        .count()

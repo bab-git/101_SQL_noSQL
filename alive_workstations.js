@@ -8,9 +8,9 @@ db.workstation.aggregate([
                 as: "site"
             }    
     },
-//     {
-//         $unwind: {path: "$site", preserveNullAndEmptyArrays: true}
-//     },
+    {
+        $unwind: {path: "$site", preserveNullAndEmptyArrays: true}
+    },
     {
          $lookup: 
             {
@@ -33,8 +33,8 @@ db.workstation.aggregate([
 //                 "lastBootTime":0,
 //                 "utcOffset":0,
 //                 "agentVersion":0,                               
-                 name:1,
-//                  site:1,
+                 dev_name:"$name",
+                 site_name:"$site.name",
 //                  client:1,
 //                  dscLocalDate:1
                 }
