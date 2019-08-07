@@ -139,10 +139,10 @@ WK_db['Type'] = "workstation"
 SV_db = pd.DataFrame(SV_list)
 SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
-print(device_list [0])
+device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 #for i in range(len(device_db)):
-i = 2
+i = 3
 #device_id = WK_list[i]['_id']
 device_id = int(device_db['_id'][i])
 results = checks.find(
@@ -166,25 +166,26 @@ if len(check_results) > 0:
                                                      'extra','checkid','deviceid']).sort_values(by = 'servertime')#, ascending = False)
 #%%                            
     check_SQL = check_SQL.reset_index(drop = True)
+    check_SQL0 = check_SQL  # for debuging - todo remove
     temp_SQL = check_SQL[check_SQL.index == 0]
     ch_id_hist = np.array(check_SQL['checkid'][0])
     temp_SQL['last_fail'] = ''
     temp_SQL.last_fail[0] = check_SQL['servertime'][0]
-    for i_f in range(1,len_fails):
+    i_f = 1
+    while i_f < len(check_SQL):
         if check_SQL['checkid'][i_f] in ch_id_hist:
-#            check_SQL['checkid'][i_f]
-            a = temp_SQL[temp_SQL.checkid == check_SQL['checkid'][i_f]]['last_fail'][0]            
+            i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
+            a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
             b = check_SQL['servertime'][i_f]
-            if (b - a).total_seconds() > 3*3600:   # a broken sequence of failures ==> new failure
-                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
-                temp_SQL['last_fail'][i_match] = b
-            else:
-                print("what?")# continues failing sequanece    
-                
+            if (b - a).total_seconds() < 3.5*3600:   # continues failing sequanece ==> clear it from the table        
+                check_SQL = check_SQL.drop(i_f,ignore_index=True)
+                i_f -= 1
+            temp_SQL['last_fail'][i_match] = b                
         else:  # new failure
             temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
-            temp_SQL.last_fail[len(temp_SQL)-1] = check_SQL['servertime'][[i_f]]
+            temp_SQL.last_fail[len(temp_SQL)-1] = check_SQL['servertime'][i_f]
             ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+        i_f += 1
                 
                 
             
