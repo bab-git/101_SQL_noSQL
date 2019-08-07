@@ -4,6 +4,7 @@ Created on Tue Jul 30 13:55:19 2019
 
 @author: Babak Hosseini
 """
+import numpy as np
 from datetime import datetime
 import pandas as pd
 import pymongo
@@ -147,19 +148,50 @@ device_id = int(device_db['_id'][i])
 results = checks.find(
             {
                 "servertime": {
-                                "$gte": datetime(2019,7,31,1,0,0),
+                                "$gte": datetime(2019,6,1,1,0,0),
                                 "$lte": datetime(2019,7,31,23,59,59)
                                 },    
                 "deviceid":device_id,
-                "checkstatus": {"$ne":"testok"}
-                
+#                "dsc247":2,
+                "checkstatus": {"$ne":"testok"}                
+#                "checkid": "16879864"
             }
             )
 check_results = list(results)
-print(len(check_results))
+len_fails = len(check_results)
+print(len_fails)
 if len(check_results) > 0:
-    check_SQL=pd.DataFrame(check_results, columns = ['servertime','checkstatus','deviceid','dsc247','extra'])
+    check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
+                                                     'checkstatus','consecutiveFails','dsc247',
+                                                     'extra','checkid','deviceid']).sort_values(by = 'servertime')#, ascending = False)
+#%%                            
+    check_SQL = check_SQL.reset_index(drop = True)
+    temp_SQL = check_SQL[check_SQL.index == 0]
+    ch_id_hist = np.array(check_SQL['checkid'][0])
+    temp_SQL['last_fail'] = ''
+    temp_SQL.last_fail[0] = check_SQL['servertime'][0]
+    for i_f in range(1,len_fails):
+        if check_SQL['checkid'][i_f] in ch_id_hist:
+#            check_SQL['checkid'][i_f]
+            a = temp_SQL[temp_SQL.checkid == check_SQL['checkid'][i_f]]['last_fail'][0]            
+            b = check_SQL['servertime'][i_f]
+            if (b - a).total_seconds() > 3*3600:   # a broken sequence of failures ==> new failure
+                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
+                temp_SQL['last_fail'][i_match] = b
+            else:
+                print("what?")# continues failing sequanece    
+                
+        else:  # new failure
+            temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
+            temp_SQL.last_fail[len(temp_SQL)-1] = check_SQL['servertime'][[i_f]]
+            ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+                
+                
+            
+        
+        
     
+#%%
     
 pd.DataFrame({values:df_her1.values,
                            'Percentage':price_ratio},

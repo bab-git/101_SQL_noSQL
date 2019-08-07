@@ -3,7 +3,7 @@ db.getCollection('check').find(
 //          $and: 
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
-            servertime: {
+            datetime: {
                             "$gte": new ISODate("2019-07-31 01:00:00.000Z"),
                             "$lte": new ISODate("2019-07-31 23:59:59.000Z")
                           },
@@ -11,8 +11,9 @@ db.getCollection('check').find(
 //             {description: {$search:"Anti"}},
 //             {checkid:"29671730"},
 //             {description:{$not:/Anti/}},
-            deviceid:1035046,
+//             deviceid:1035046,
 //             {deviceid:{"$gte":1035046}},
+               dsc247: {$nin:[1,2]}
 //          ],
 //         $not:
 //             description:{$nin:[/Anti/]}
