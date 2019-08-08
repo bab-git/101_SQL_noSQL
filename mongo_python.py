@@ -164,35 +164,45 @@ if len(check_results) > 0:
     check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
                                                      'checkstatus','consecutiveFails','dsc247',
                                                      'extra','checkid','deviceid']).sort_values(by = 
-#                                                    'servertime')#, ascending = False)
-                                                    ['checkid','servertime'])#, ascending = False)
-#%%                            
+                                                    'servertime')#, ascending = False)
+#                                                    ['checkid','servertime'])#, ascending = False)        
+    temp = device_db.loc[[i],['device_name','client_name','site_name','Type']].iloc[0]
+    check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)
+   
     check_SQL = check_SQL.reset_index(drop = True)
     check_SQL0 = check_SQL  # for debuging - todo remove
     temp_SQL = check_SQL[check_SQL.index == 0]
     ch_id_hist = np.array(check_SQL['checkid'][0])
     temp_SQL['last_fail'] = ''
+    temp_SQL['index_last'] = ''    
+    check_SQL['last_fail'] = '' 
     temp_SQL.last_fail[0] = check_SQL['servertime'][0]
+    temp_SQL.index_last[0] = 0
     i_f = 1
 # %%
     while i_f < len(check_SQL):
-#        if check_SQL['servertime'][i_f] >= datetime(2019,6,2,0,0,23):
+#        if check_SQL['servertime'][i_f] >= datetime(2019,7,31,9,0,23):
 #            break        
+        b = check_SQL['servertime'][i_f]
         if check_SQL['checkid'][i_f] in ch_id_hist:
             i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
-            a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]
-            b = check_SQL['servertime'][i_f]
+            a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
             cons_b = check_SQL['consecutiveFails'][i_f]
             cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
             if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and cons_b>1 and cons_a>1):
-                # continues failing sequanece ==> clear it from the table        
+                # continues failing sequanece ==> clear it from the table
+#                break
                 check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                 i_f -= 1
-            temp_SQL['last_fail'][i_match] = b                
+                check_SQL['last_fail'][temp_SQL['index_last'][i_match]] = b
+#            temp_SQL['last_fail'][i_match] = b
         else:  # new failure
             temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
-            temp_SQL.last_fail[len(temp_SQL)-1] = check_SQL['servertime'][i_f]
+            i_match = len(temp_SQL)-1;        
             ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+            temp_SQL.index_last[i_match] = i_f
+            
+        temp_SQL['last_fail'][i_match] = b
         i_f += 1
         check_SQL_last = check_SQL
                 
@@ -200,8 +210,7 @@ if len(check_results) > 0:
         
         
     
-#%%
-    
+#%%    
 pd.DataFrame({values:df_her1.values,
                            'Percentage':price_ratio},
                             index = shorten_names).sort_values(by = 'preis',ascending=False)      
