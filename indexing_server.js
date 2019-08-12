@@ -1,0 +1,1 @@
+db.check.createIndex( { servertime: 1 }, { background: true } )
