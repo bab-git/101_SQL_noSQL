@@ -4,10 +4,12 @@ Created on Tue Jul 30 13:55:19 2019
 
 @author: Babak Hosseini
 """
+import os.path
 import numpy as np
 from datetime import datetime
 import pandas as pd
 import pymongo
+from openpyxl import load_workbook
 #from pymongo import Connection
 from pymongo import MongoClient
 import pprint
@@ -16,6 +18,8 @@ Mclient = MongoClient('mongodb://192.168.2.208:27018')
 
 db = Mclient.sms
 db.list_collection_names()
+
+os.chdir('C:\\101_task')
 
 clients = db['client']
 checks = db['check']
@@ -141,73 +145,101 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-#for i in range(len(device_db)):
-i = 3
-#device_id = WK_list[i]['_id']
-device_id = int(device_db['_id'][i])
-results = checks.find(
-            {
-                "servertime": {
-                                "$gte": datetime(2019,6,1,1,0,0),
-                                "$lte": datetime(2019,7,31,23,59,59)
-                                },    
-                "deviceid":device_id,
-#                "dsc247":2,
-                "checkstatus": {"$ne":"testok"}                
-#                "checkid": "16879864"
-            }
-            )
-check_results = list(results)
-len_fails = len(check_results)
-print(len_fails)
-if len(check_results) > 0:
-    check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
-                                                     'checkstatus','consecutiveFails','dsc247',
-                                                     'extra','checkid','deviceid']).sort_values(by = 
-                                                    'servertime')#, ascending = False)
-#                                                    ['checkid','servertime'])#, ascending = False)        
-    temp = device_db.loc[[i],['device_name','client_name','site_name','Type']].iloc[0]
-    check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)
-   
-    check_SQL = check_SQL.reset_index(drop = True)
-    check_SQL0 = check_SQL  # for debuging - todo remove
-    temp_SQL = check_SQL[check_SQL.index == 0]
-    ch_id_hist = np.array(check_SQL['checkid'][0])
-    temp_SQL['last_fail'] = ''
-    temp_SQL['index_last'] = ''    
-    check_SQL['last_fail'] = '' 
-    temp_SQL.last_fail[0] = check_SQL['servertime'][0]
-    temp_SQL.index_last[0] = 0
-    i_f = 1
-# %%
-    while i_f < len(check_SQL):
-#        if check_SQL['servertime'][i_f] >= datetime(2019,7,31,9,0,23):
-#            break        
-        b = check_SQL['servertime'][i_f]
-        if check_SQL['checkid'][i_f] in ch_id_hist:
-            i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
-            a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
-            cons_b = check_SQL['consecutiveFails'][i_f]
-            cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
-            if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and cons_b>1 and cons_a>1):
-                # continues failing sequanece ==> clear it from the table
-#                break
-                check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
-                i_f -= 1
-                check_SQL['last_fail'][temp_SQL['index_last'][i_match]] = b
-#            temp_SQL['last_fail'][i_match] = b
-        else:  # new failure
-            temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
-            i_match = len(temp_SQL)-1;        
-            ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
-            temp_SQL.index_last[i_match] = i_f
-            
-        temp_SQL['last_fail'][i_match] = b
-        i_f += 1
-        check_SQL_last = check_SQL
+#i = 0
+#while i <= 10:
+while i <= len(device_db):
+#    i = 0
+    #device_id = WK_list[i]['_id']
+    print('Getting checks for device_id:',i,'/',len(device_db),'...')
+    device_id = int(device_db['_id'][i])
+    results = checks.find(
+                {
+                    "servertime": {
+                                    "$gte": datetime(2019,6,1,1,0,0),
+                                    "$lte": datetime(2019,7,31,23,59,59)
+                                    },    
+                    "deviceid":device_id,
+    #                "dsc247":2,
+                    "checkstatus": {"$ne":"testok"}                
+    #                "checkid": "16879864"
+                }
+                )
+    check_results = list(results)
+    len_fails = len(check_results)
+    print('number of failed checks:',len_fails)
+#    %%
+    if len(check_results) > 0:
+        print('Prepaing the SQL table...')
+        check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
+                                                         'checkstatus','consecutiveFails','dsc247',
+                                                         'extra','checkid','deviceid']).sort_values(by = 
+                                                        'servertime')#, ascending = False)
+    #                                                    ['checkid','servertime'])#, ascending = False)        
+        temp = device_db.loc[[i],['device_name','client_name','site_name','Type']].iloc[0]
+        check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)
+       
+        check_SQL = check_SQL.reset_index(drop = True)
+#        check_SQL0 = check_SQL  # for debuging - todo remove
+        temp_SQL = check_SQL[check_SQL.index == 0]
+        ch_id_hist = np.array(check_SQL['checkid'][0])        
+        temp_SQL = pd.concat([temp_SQL,pd.DataFrame(columns = ['last_fail','index_last'])], sort=False)
+#        temp_SQL.insert(len(temp_SQL.columns),list(['last_fail','index_last']), '')
+#        temp_SQL['last_fail'] = ''
+#        temp_SQL['index_last'] = ''    
+        check_SQL['last_fail'] = '' 
+        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
+        temp_SQL.loc[0,'index_last'] = 0
+        i_f = 1
+    
+        while i_f < len(check_SQL):
+    #        if check_SQL['servertime'][i_f] >= datetime(2019,7,31,9,0,23):
+    #            break        
+            b = check_SQL['servertime'][i_f]
+            if check_SQL['checkid'][i_f] in ch_id_hist:
+                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
+                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
+                cons_b = check_SQL['consecutiveFails'][i_f]
+                cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
+                if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and cons_b>1 and cons_a>1):
+                    # continues failing sequanece ==> clear it from the table
+    #                break
+                    check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+                    i_f -= 1
+                    check_SQL.loc[temp_SQL['index_last'][i_match],'last_fail'] = b
+    #            temp_SQL['last_fail'][i_match] = b
+            else:  # new failure
+                temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
+                i_match = len(temp_SQL)-1;        
+                ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+                temp_SQL.loc[i_match,'index_last'] = i_f
                 
+            temp_SQL.loc[i_match,'last_fail'] = b
+            i_f += 1
+            check_SQL_last = check_SQL[['device_name','Type','checkstatus',
+                                        'description','servertime','last_fail',
+                                        'client_name','site_name','extra',
+                                        'dsc247','deviceid','checkid','consecutiveFails']]
             
-        
+        excel_path = 'check_list.xlsx'
+        print('Saving', len(check_SQL_last), 'extracted failes to the SQL table...')
+        if not os.path.isfile(excel_path):
+            check_SQL_last.to_excel(excel_path, index = False)
+        else: # appending to the excell file
+            book = load_workbook(excel_path)
+            last_row = book['Sheet1'].max_row        
+            writer = pd.ExcelWriter(excel_path, engine='openpyxl')        
+    #        writer = pd.ExcelWriter(excel_path)
+    #        check_SQL_last.to_excel(writer)
+    #        writer.save()        
+            writer.book = book
+            writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+            check_SQL_last.to_excel(writer, startrow = last_row+1,index = False, header = False)
+            writer.save()
+        print("""
+              =========== tabel saved =====
+              ============================="""
+              )
+    i += 1
         
     
 #%%    
