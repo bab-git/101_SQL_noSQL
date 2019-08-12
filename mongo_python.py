@@ -98,6 +98,7 @@ Ts=T_end.hour-T_end_1.hour   # sampling time
 #%%==================== List of active devices for the month
 # getting list of device ids for WK ans servers
 pipelin3 = [
+        
            {
            "$lookup":
                      {
@@ -146,12 +147,13 @@ device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 #i = 0
-#while i <= 10:
-while i <= len(device_db):
+while i <= 20:
+#while i <= len(device_db):
 #    i = 0
     #device_id = WK_list[i]['_id']
     print('Getting checks for device_id:',i,'/',len(device_db),'...')
     device_id = int(device_db['_id'][i])
+    #  %%
     results = checks.find(
                 {
                     "servertime": {
@@ -165,6 +167,7 @@ while i <= len(device_db):
                 }
                 )
     check_results = list(results)
+    #  %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
 #    %%
@@ -198,9 +201,10 @@ while i <= len(device_db):
             if check_SQL['checkid'][i_f] in ch_id_hist:
                 i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
                 a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
+                dsc247 = check_SQL['dsc247'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
-                if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and cons_b>1 and cons_a>1):
+                if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and (cons_b>1 or dsc247 !=2 )):
                     # continues failing sequanece ==> clear it from the table
     #                break
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
@@ -222,6 +226,7 @@ while i <= len(device_db):
             
         excel_path = 'check_list.xlsx'
         print('Saving', len(check_SQL_last), 'extracted failes to the SQL table...')
+        #  %%
         if not os.path.isfile(excel_path):
             check_SQL_last.to_excel(excel_path, index = False)
         else: # appending to the excell file
@@ -262,3 +267,22 @@ if len(a['inprog']) > 1:
 
 #connection = Connection()
 #connection = Connection()
+#%%==================== Check specific cases
+results = checks.find(
+                {
+                    "servertime": {
+                                    "$gte": datetime(2019,6,6,1,0,0),
+                                    "$lte": datetime(2019,7,31,23,59,59)
+                                    },    
+                    "deviceid":745857,
+    #                "dsc247":2,
+#                    "checkstatus": {"$ne":"testok"},            
+                    "checkid": "16878435"
+                }
+                )
+some_results = list(results)
+partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
+                                                         'checkstatus','consecutiveFails','dsc247',
+                                                         'extra','checkid','deviceid']).sort_values(by = 
+#                                                        'servertime')#, ascending = False)
+                                                        ['checkid','servertime'])#, ascending = False)    
