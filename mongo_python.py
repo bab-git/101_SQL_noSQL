@@ -204,7 +204,7 @@ while i <= 20:
                 dsc247 = check_SQL['dsc247'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
-                if ((b - a).total_seconds() < 3.5*3600) or (b.day-a.day == 1 and (cons_b>1 or dsc247 !=2 )):
+                if ((b - a).total_seconds() < 3.5*3600) or ((b.day-a.day == 1 or (b.day-a.day <0 and (b-a).seconds < 24*3600) ) and (cons_b>1 or dsc247 !=2 )):
                     # continues failing sequanece ==> clear it from the table
     #                break
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
@@ -271,13 +271,13 @@ if len(a['inprog']) > 1:
 results = checks.find(
                 {
                     "servertime": {
-                                    "$gte": datetime(2019,6,6,1,0,0),
-                                    "$lte": datetime(2019,7,31,23,59,59)
+                                    "$gte": datetime(2019,6,6,12,0,0),
+                                    "$lte": datetime(2019,7,27,23,59,59)
                                     },    
-                    "deviceid":745857,
+                    "deviceid":745948,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "16878435"
+                    "checkid": "16880062"
                 }
                 )
 some_results = list(results)
