@@ -146,8 +146,8 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-#i = 0
-while i <= 20:
+i = 0
+while i <= 3:
 #while i <= len(device_db):
 #    i = 0
     #device_id = WK_list[i]['_id']
@@ -160,10 +160,11 @@ while i <= 20:
                                     "$gte": datetime(2019,6,1,1,0,0),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-                    "deviceid":745958,
+#                    "deviceid":device_id,
+                    "deviceid":745948,
     #                "dsc247":2,
-                    "checkstatus": {"$ne":"testok"}  ,              
-                    "checkid": "16880243"
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "16880066"
                 }
                 )
     check_results = list(results)
@@ -182,7 +183,7 @@ while i <= 20:
         check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)
        
         check_SQL = check_SQL.reset_index(drop = True)
-#        check_SQL0 = check_SQL  # for debuging - todo remove
+        check_SQL0 = check_SQL  # for debuging - todo remove
         temp_SQL = check_SQL[check_SQL.index == 0]
         ch_id_hist = np.array(check_SQL['checkid'][0])        
         temp_SQL = pd.concat([temp_SQL,pd.DataFrame(columns = ['last_fail','index_last'])], sort=False)
@@ -193,10 +194,11 @@ while i <= 20:
         temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
         temp_SQL.loc[0,'index_last'] = 0
         i_f = 1
+        i_g = 1
      # %%
-        while i_f < len(check_SQL):
-            if check_SQL['servertime'][i_f] >= datetime(2019,6,22,7,9,0):
-                break        
+#        while i_f < len(check_SQL):
+#            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
+#                break        
             b = check_SQL['servertime'][i_f]
             if check_SQL['checkid'][i_f] in ch_id_hist:
                 i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
@@ -213,19 +215,21 @@ while i <= 20:
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                     i_f -= 1
                     check_SQL.loc[temp_SQL['index_last'][i_match],'last_fail'] = b
+                    check_SQL.loc[temp_SQL['index_last'][i_match],'consecutiveFails'] = cons_b
             else:  # new failure
                 temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
                 i_match = len(temp_SQL)-1;        
                 ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
             temp_SQL.loc[i_match,'index_last'] = i_f        
             temp_SQL.loc[i_match,'last_fail'] = b
-            i_f += 1
-        # %%                    
+            i_f += 1                            
+            i_g += 1
+        # %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
                                     'dsc247','deviceid','checkid','consecutiveFails']]
-                    
+        
         excel_path = 'check_list.xlsx'
         print('Saving', len(check_SQL_last), 'extracted failes to the SQL table...')        
         if not os.path.isfile(excel_path):
@@ -273,12 +277,12 @@ results = checks.find(
                 {
                     "servertime": {
                                     "$gte": datetime(2019,6,1,12,0,0),
-                                    "$lte": datetime(2019,7,4,23,59,59)
+                                    "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-                    "deviceid":745958,
+                    "deviceid":745948,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "16880243"
+                    "checkid": "16880066"
                 }
                 )
 some_results = list(results)
