@@ -1,8 +1,8 @@
 db.workstation.aggregate([
-//     { $match: {_id:1096537}},    
-//     { $match: {_id:1035046}},
+    { $match: {_id:609254}},    
+//     { $match: {_id:1004254}},
 // db.server.aggregate([
-//     { $match: {_id:881738} },            
+//     { $match: {_id:609254} },            
     {
         $lookup:
             {
@@ -38,8 +38,8 @@ db.workstation.aggregate([
     },
 //     { $match: {"client.apiKey":{$not:/ae/}}},
     { $match: {"site.enabled" : true}},
-    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
+    { $match: {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
 //     {$match: {dscLocalDate: {"$gt":ISODate("2019-08-01 01:00:10.000Z")}}},
-//     { $not: {"checkstatus":"testok"}}
+//     { $not: {"checkstatus":"testok"}}
 //     {$count: "device count"}
 ])
