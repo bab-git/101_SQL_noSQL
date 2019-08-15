@@ -195,8 +195,8 @@ while i <= 3:
 #        check_SQL['last_fail'] = '' 
 #        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
 #        temp_SQL.loc[0,'index_last'] = 0
-         i_f = 1
-         i_g = 1
+        i_f = 1
+        i_g = 1
      # %%   loop over the rows
         while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
@@ -221,6 +221,8 @@ while i <= 3:
                     i_f -= 1
                     check_SQL.loc[i_f,'last_fail'] = b
                     check_SQL.loc[i_f,'consFails'] = cons_b
+                else:  # same checkid but a new sequence
+                    check_current = check_next
             else:  # new check
                 
                 check_current = check_next
@@ -263,7 +265,7 @@ while i <= 3:
     i += 1
         
     
-#%%    
+#%%
 pd.DataFrame({values:df_her1.values,
                            'Percentage':price_ratio},
                             index = shorten_names).sort_values(by = 'preis',ascending=False)      
