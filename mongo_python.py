@@ -207,7 +207,7 @@ while i <= 8:
 #            if check_next == '16880065':
 #                break
             if check_next == check_current:  # same check
-                seq = 0
+                seq = 0  # flags the existing sequence
 
 #                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
 #                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
@@ -218,10 +218,35 @@ while i <= 8:
                 b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = check_SQL['consecutiveFails'][i_f-1]
-                a
-                if (    ((b - a).total_seconds() < 3.5*3600) or # 2-3hr consequative errors
-                        (   (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ) and # next day sequence
-                             (cons_b > cons_a or dsc247 == 2 ) # safety check or consecutiveFails
+                
+                if ((b - a).total_seconds() < 3.5*3600): # 2-3hr consequative errors
+                    seq = 1
+                elif (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ): # next day sequence
+                    if dsc247 == 2 : # safety check or consecutiveFails
+                        seq = 1
+                    else:    # look for in between testok!
+                        
+                        results = checks.find(
+                                            {
+                                                "servertime": {
+                                                                "$gte": a,
+                                                                "$lte": b
+                                                                },    
+                                                "deviceid":device_id,                                
+                                                "checkstatus": {"testok"},            
+                                                "checkid": check_current                                            }
+                                            )
+                        temp_results = list(results)
+                        temp_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
+                                                         'checkstatus','consecutiveFails','dsc247',
+                                                         'extra','checkid','deviceid']).sort_values(by = 
+#                                                        'servertime')#, ascending = False)
+                                                        ['checkid','servertime'])#, ascending = False)    
+                        
+                        
+                        
+                        
+                         
                              ) ):
                     # continues failing sequanece ==> clear it from the table
     #                break                                        
@@ -248,7 +273,7 @@ while i <= 8:
 #            temp_SQL.loc[i_match,'last_fail'] = b
             i_f += 1
             i_g += 1
-        #  %%                        
+        # %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
