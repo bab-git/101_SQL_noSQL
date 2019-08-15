@@ -7,7 +7,7 @@ db.getCollection('check').find(
                             "$gte": new ISODate("2019-01-02 01:00:00.000Z"),
                             "$lte": new ISODate("2019-08-12 23:59:59.000Z")
                           },
-//             {checkstatus: {$ne:"testok"}},
+//             {checkstatus: {$ne:"testok"}},
             checkstatus : "testok_inactive",
 //             {description: {$search:"Anti"}},
             checkid:"30928254",
@@ -21,10 +21,10 @@ db.getCollection('check').find(
 //             description:{$not:/Anti/}
     }
 //     {
-//         deviceid:1,
-//         checkid:1,
-//         checkstatus:1,
-//         consecutiveFails:1,
+//         deviceid:1,
+//         checkid:1,
+//         checkstatus:1,
+//         consecutiveFails:1,
 //         servertime:1        
 //     }    
 )

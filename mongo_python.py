@@ -147,28 +147,28 @@ device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 i = 0
-while i <= 3:
+while i <= 8:
 #while i <= len(device_db):
 #    i = 0
     #device_id = WK_list[i]['_id']
     print('Getting checks for device_id:',i,'/',len(device_db),'...')
     device_id = int(device_db['_id'][i])
-    # %%
+    #  %%
     results = checks.find(
                 {
                     "servertime": {
                                     "$gte": datetime(2019,6,1,1,0,0),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-#                    "deviceid":device_id,
-                    "deviceid":745948,
+                    "deviceid":device_id,
+#                    "deviceid":745948,
     #                "dsc247":2,
                     "checkstatus": {"$ne":"testok"},
 #                    "checkid": "16880066"
                 }
                 )
     check_results = list(results)
-    # %%
+    #  %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
 #    %%
@@ -187,6 +187,8 @@ while i <= 3:
         check_SQL0 = check_SQL  # for debuging - todo remove
         
         check_current = check_SQL.loc[0,'checkid']
+        check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
+        dsc247 = check_SQL['dsc247'][0]
 #        check_next = check_current
         
 #        temp_SQL = check_SQL[check_SQL.index == 0]
@@ -197,16 +199,21 @@ while i <= 3:
 #        temp_SQL.loc[0,'index_last'] = 0
         i_f = 1
         i_g = 1
-     # %%   loop over the rows
+     #  %%   loop over the rows
         while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
 #                break                    
-            check_next = check_SQL.loc[i_f,'checkid']            
+            check_next = check_SQL.loc[i_f,'checkid']
+#            if check_next == '16880065':
+#                break
             if check_next == check_current:  # same check
-
+                cons = 0;
 #                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
 #                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
-                a = check_SQL['servertime'][i_f-1]
+                if check_SQL['last_fail'][i_f-1]=='':
+                    a = check_SQL['servertime'][i_f-1]
+                else:
+                    a = check_SQL['last_fail'][i_f-1]
                 b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = check_SQL['consecutiveFails'][i_f-1]
@@ -216,32 +223,37 @@ while i <= 3:
                              (cons_b > cons_a or dsc247 == 2 ) # safety check or consecutiveFails
                              ) ):
                     # continues failing sequanece ==> clear it from the table
-    #                break                    
+    #                break                                        
+                    check_SQL.loc[i_f-1,'extra'] = check_SQL.loc[i_f,'extra']
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                     i_f -= 1
                     check_SQL.loc[i_f,'last_fail'] = b
-                    check_SQL.loc[i_f,'consFails'] = cons_b
-                else:  # same checkid but a new sequence
-                    check_current = check_next
+                    check_SQL.loc[i_f,'consFails'] = cons_b                    
+#                else:  # same checkid but a new sequence
+                    
             else:  # new check
+                dsc247 = check_SQL['dsc247'][i_f]
                 
-                check_current = check_next
-               ?? here?? dsc247 = check_SQL['dsc247'][i_f]
+#                check_current = check_next
+#               ?? here?? dsc247 = check_SQL['dsc247'][i_f]
                 
-                temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
-                i_match = len(temp_SQL)-1;        
-                ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
-                
-                
+#                temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
+#                i_match = len(temp_SQL)-1;        
+#                ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+            if check_SQL['consFails'][i_f]=='':
+                    check_SQL.loc[i_f,'consFails'] = check_SQL.loc[i_f,'consecutiveFails']
+            check_current = check_next                
 #            temp_SQL.loc[i_match,'index_last'] = i_f        
 #            temp_SQL.loc[i_match,'last_fail'] = b
             i_f += 1
             i_g += 1
-        # %%                        
+        #  %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
-                                    'dsc247','deviceid','checkid','consecutiveFails']]
+                                    'dsc247','deviceid','checkid','consFails']]
+        check_SQL_last = check_SQL_last.rename(columns = {"consFails":"consecutiveFails"})
+        check_SQL_last = check_SQL_last.sort_values(by = 'servertime')
         
         excel_path = 'check_list.xlsx'
         print('Saving', len(check_SQL_last), 'extracted failes to the SQL table...')        
@@ -273,9 +285,12 @@ pd.DataFrame({values:df_her1.values,
 
 #%%==================== Check the running operations
 a=db.current_op()
-print(len(a['inprog']))
-if len(a['inprog']) > 1:
-    print("Still running operations")
+print(len(a['inprog'])-1,'operation is still running')
+#if len(a['inprog']) > 1:
+#    print("Still running operations")
+#else:
+#    print("All is good!")
+        
 #agg_expl = db.command('aggregate','check',pipeline=pipeline, explain=True)
 
 #            {"$group": {"_id":"$deviceid", "max_time":{"$max":"$servertime"}}}    
@@ -289,13 +304,13 @@ if len(a['inprog']) > 1:
 results = checks.find(
                 {
                     "servertime": {
-                                    "$gte": datetime(2019,6,1,12,0,0),
+                                    "$gte": datetime(2019,6,1,0,0,1),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-                    "deviceid":745948,
+                    "deviceid":745976,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "16880066"
+                    "checkid": "16880587"
                 }
                 )
 some_results = list(results)
@@ -305,7 +320,7 @@ partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
 #                                                        'servertime')#, ascending = False)
                                                         ['checkid','servertime'])#, ascending = False)    
 
-
+partial_SQL.head(2)
 
 
 #%% test
