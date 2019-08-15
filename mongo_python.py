@@ -218,7 +218,7 @@ while i <= 8:
                 b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = check_SQL['consecutiveFails'][i_f-1]
-                
+                a
                 if (    ((b - a).total_seconds() < 3.5*3600) or # 2-3hr consequative errors
                         (   (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ) and # next day sequence
                              (cons_b > cons_a or dsc247 == 2 ) # safety check or consecutiveFails
