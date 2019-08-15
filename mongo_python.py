@@ -168,7 +168,7 @@ while i <= 3:
                 }
                 )
     check_results = list(results)
-    #  %%
+    # %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
 #    %%
@@ -177,35 +177,40 @@ while i <= 3:
         check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
                                                          'checkstatus','consecutiveFails','dsc247',
                                                          'extra','checkid','deviceid']).sort_values(by = 
-                                                        'servertime')#, ascending = False)
-    #                                                    ['checkid','servertime'])#, ascending = False)        
+#                                                        'servertime')#, ascending = False)
+                                                        ['checkid','servertime'])#, ascending = False)                              
         temp = device_db.loc[[i],['device_name','client_name','site_name','Type']].iloc[0]
-        check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)
-       
+        check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
         check_SQL = check_SQL.reset_index(drop = True)
+        check_SQL['consFails'] = ''
+        check_SQL['last_fail'] = ''
         check_SQL0 = check_SQL  # for debuging - todo remove
-        temp_SQL = check_SQL[check_SQL.index == 0]
-        ch_id_hist = np.array(check_SQL['checkid'][0])        
-        temp_SQL = pd.concat([temp_SQL,pd.DataFrame(columns = ['last_fail','index_last'])], sort=False)
-#        temp_SQL.insert(len(temp_SQL.columns),list(['last_fail','index_last']), '')
-#        temp_SQL['last_fail'] = ''
-#        temp_SQL['index_last'] = ''    
-        check_SQL['last_fail'] = '' 
-        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
-        temp_SQL.loc[0,'index_last'] = 0
-        i_f = 1
-        i_g = 1
-     # %%
-#        while i_f < len(check_SQL):
+        
+        check_current = check_SQL.loc[0,'checkid']
+#        check_next = check_current
+        
+#        temp_SQL = check_SQL[check_SQL.index == 0]
+#        ch_id_hist = np.array(check_SQL['checkid'][0])        
+#        temp_SQL = pd.concat([temp_SQL,pd.DataFrame(columns = ['last_fail','index_last'])], sort=False)
+#        check_SQL['last_fail'] = '' 
+#        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
+#        temp_SQL.loc[0,'index_last'] = 0
+         i_f = 1
+         i_g = 1
+     # %%   loop over the rows
+        while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
-#                break        
-            b = check_SQL['servertime'][i_f]
-            if check_SQL['checkid'][i_f] in ch_id_hist:
-                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
-                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
-                dsc247 = check_SQL['dsc247'][i_f]
+#                break                    
+            check_next = check_SQL.loc[i_f,'checkid']            
+            if check_next == check_current:  # same check
+
+#                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
+#                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
+                a = check_SQL['servertime'][i_f-1]
+                b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
-                cons_a = temp_SQL['consecutiveFails'][i_match].reset_index(drop = True)[0]
+                cons_a = check_SQL['consecutiveFails'][i_f-1]
+                
                 if (    ((b - a).total_seconds() < 3.5*3600) or # 2-3hr consequative errors
                         (   (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ) and # next day sequence
                              (cons_b > cons_a or dsc247 == 2 ) # safety check or consecutiveFails
@@ -214,15 +219,21 @@ while i <= 3:
     #                break                    
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                     i_f -= 1
-                    check_SQL.loc[temp_SQL['index_last'][i_match],'last_fail'] = b
-                    check_SQL.loc[temp_SQL['index_last'][i_match],'consecutiveFails'] = cons_b
-            else:  # new failure
+                    check_SQL.loc[i_f,'last_fail'] = b
+                    check_SQL.loc[i_f,'consFails'] = cons_b
+            else:  # new check
+                
+                check_current = check_next
+               ?? here?? dsc247 = check_SQL['dsc247'][i_f]
+                
                 temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
                 i_match = len(temp_SQL)-1;        
                 ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
-            temp_SQL.loc[i_match,'index_last'] = i_f        
-            temp_SQL.loc[i_match,'last_fail'] = b
-            i_f += 1                            
+                
+                
+#            temp_SQL.loc[i_match,'index_last'] = i_f        
+#            temp_SQL.loc[i_match,'last_fail'] = b
+            i_f += 1
             i_g += 1
         # %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
