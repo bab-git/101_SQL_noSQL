@@ -207,7 +207,7 @@ while i <= 8:
 #            if check_next == '16880065':
 #                break
             if check_next == check_current:  # same check
-                cons = 0;
+
 #                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
 #                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
                 if check_SQL['last_fail'][i_f-1]=='':
