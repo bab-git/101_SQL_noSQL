@@ -4,6 +4,7 @@ Created on Tue Jul 30 13:55:19 2019
 
 @author: Babak Hosseini
 """
+import time
 import os.path
 import numpy as np
 from datetime import datetime
@@ -146,8 +147,8 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-i = 0
-while i <= 8:
+#i = 0
+while i <= len(device_db):
 #while i <= len(device_db):
 #    i = 0
     #device_id = WK_list[i]['_id']
@@ -161,10 +162,10 @@ while i <= 8:
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
                     "deviceid":device_id,
-#                    "deviceid":745948,
+#                    "deviceid":745976,
     #                "dsc247":2,
                     "checkstatus": {"$ne":"testok"},
-#                    "checkid": "16880066"
+#                    "checkid": "16880587"
                 }
                 )
     check_results = list(results)
@@ -233,30 +234,18 @@ while i <= 8:
                                                                 "$lte": b
                                                                 },    
                                                 "deviceid":device_id,                                
-                                                "checkstatus": {"testok"},            
+                                                "checkstatus": "testok",
                                                 "checkid": check_current                                            }
                                             )
                         temp_results = list(results)
-                        temp_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
-                                                         'checkstatus','consecutiveFails','dsc247',
-                                                         'extra','checkid','deviceid']).sort_values(by = 
-#                                                        'servertime')#, ascending = False)
-                                                        ['checkid','servertime'])#, ascending = False)    
-                        
-                        
-                        
-                        
-                         
-                             ) ):
-                    # continues failing sequanece ==> clear it from the table
-    #                break                                        
+                        if len(temp_results) == 0: # continues fail sequence
+                            seq = 1
+                if seq == 1:  # continues failing sequanece ==> clear it from the table    
                     check_SQL.loc[i_f-1,'extra'] = check_SQL.loc[i_f,'extra']
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                     i_f -= 1
                     check_SQL.loc[i_f,'last_fail'] = b
-                    check_SQL.loc[i_f,'consFails'] = cons_b                    
-#                else:  # same checkid but a new sequence
-                    
+                    check_SQL.loc[i_f,'consFails'] = cons_b                                        
             else:  # new check
                 dsc247 = check_SQL['dsc247'][i_f]
                 
@@ -273,7 +262,7 @@ while i <= 8:
 #            temp_SQL.loc[i_match,'last_fail'] = b
             i_f += 1
             i_g += 1
-        # %%                        
+        #  %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
@@ -333,10 +322,12 @@ results = checks.find(
                                     "$gte": datetime(2019,6,1,0,0,1),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-                    "deviceid":745976,
+                    "deviceid":557108
+
+,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "16880587"
+                    "checkid": "29965746"
                 }
                 )
 some_results = list(results)
@@ -348,6 +339,20 @@ partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
 
 partial_SQL.head(2)
 
+# %% performance test
+results = checks.find(
+                {
+                    "servertime": {
+                                    "$gte": datetime(2019,6,1,0,0,0),
+                                    "$lte": datetime(2019,15,1,1,0,0,0)
+                                    },    
+                    "deviceid":device_id,
+#                    "deviceid":745976,
+    #                "dsc247":2,
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "16880587"
+                }
+                )
 
 #%% test
 a=1
