@@ -149,7 +149,7 @@ device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 #i = 0
 #year_prob=[]
-while i <= len(device_db):
+while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']
