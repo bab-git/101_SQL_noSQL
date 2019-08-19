@@ -148,27 +148,40 @@ device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 #i = 0
+#year_prob=[]
 while i <= len(device_db):
-#while i <= len(device_db):
+#while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']
     print('Getting checks for device_id:',i,'/',len(device_db),'...')
     device_id = int(device_db['_id'][i])
     #  %%
+#    del resultsd
     results = checks.find(
                 {
-                    "servertime": {
-                                    "$gte": datetime(2019,6,1,1,0,0),
+                    "servertime":
+                    {
+                                    "$gte": datetime(2019,7,30,0,0,0),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
                     "deviceid":device_id,
 #                    "deviceid":745976,
-    #                "dsc247":2,
+    #                "dsc247":2, 
                     "checkstatus": {"$ne":"testok"},
 #                    "checkid": "16880587"
                 }
+#                ,projection={ 'servertime': False }
                 )
-    check_results = list(results)
+    try:
+        check_results = list(results)
+#    except Exception as ex:
+    except pymongo.errors.InvalidBSON:
+#       template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+#       message = template.format(type(ex).__name__, ex.args)
+       print('year format prblem ==> skip the device')
+       i+=1
+       year_prob.append(device_id)
+       continue
     #  %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
@@ -338,13 +351,14 @@ partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
                                                         ['checkid','servertime'])#, ascending = False)    
 
 partial_SQL.head(2)
-
 # %% performance test
+del results
+start = time.time()
 results = checks.find(
                 {
                     "servertime": {
-                                    "$gte": datetime(2019,6,1,0,0,0),
-                                    "$lte": datetime(2019,15,1,1,0,0,0)
+                                    "$gte": datetime(2018,2,1,0,0,0),
+                                    "$lte": datetime(2018,12,1,1,0,0,0)
                                     },    
                     "deviceid":device_id,
 #                    "deviceid":745976,
@@ -353,7 +367,51 @@ results = checks.find(
 #                    "checkid": "16880587"
                 }
                 )
+some_results = list(results)
+end = time.time()
+print(end - start)
 
+del results
+start = time.time()
+for i_t in range(0,5):
+#    print(i_t)
+    results = checks.find(
+                {
+                    "servertime": {
+                                    "$gte": datetime(2018,2+i_t*2,1,0,0,0),
+                                    "$lte": datetime(2018,2+(i_t+1)*2,1,1,0,0,0)
+                                    },    
+                    "deviceid":device_id,
+#                    "deviceid":745976,
+    #                "dsc247":2,
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "16880587"
+                }
+                )
+    some_results = list(results)
+end = time.time()
+print(end - start)
+
+del results
+start = time.time()
+for i_t in range(0,10):
+#    print(i_t)
+    results = checks.find(
+                {
+                    "servertime": {
+                                    "$gte": datetime(2018,2+i_t,1,0,0,0),
+                                    "$lte": datetime(2018,2+i_t+1,1,1,0,0,0)
+                                    },    
+                    "deviceid":device_id,
+#                    "deviceid":745976,
+    #                "dsc247":2,
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "16880587"
+                }
+                )
+    some_results = list(results)
+end = time.time()
+print(end - start)
 #%% test
 a=1
 b=2
