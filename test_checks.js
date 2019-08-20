@@ -21,7 +21,7 @@ db.getCollection('check').find(
 //                {checkstatus : "testerror"}
                deviceid: 590459,
 //                {checkid: "28226123"}
-               checkstatus: {$ne:"testok"}
+//                checkstatus: {$ne:"testok"}
 //             ]                         
         }     
 //     }
@@ -36,4 +36,5 @@ db.getCollection('check').find(
 //         ,projection = { 'servertime': False }
     )
 //         .limit(50)
-//         .count()
+//         .count()
+        .sort({servertime: -1})

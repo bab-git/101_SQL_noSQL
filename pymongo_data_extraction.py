@@ -2,8 +2,13 @@
 """
 Created on Tue Jul 30 13:55:19 2019
 
+The pipeline to extract data from mongoDB and saving in excell file
+for further annotation.
+
 @author: Babak Hosseini
 """
+print(__doc__)
+
 import time
 import os.path
 import numpy as np
