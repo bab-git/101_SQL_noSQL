@@ -17,7 +17,7 @@ from sklearn.decomposition import PCA
 from sklearn import svm, datasets, metrics
 
 #def plot_hyperplane(clf, min_x, max_x, linestyle, label):
-
+# %%========================
 
 def plot_hyperplane(clf, min_x, max_x, linestyle, label):
     # get the separating hyperplane
