@@ -66,7 +66,7 @@ Z = classif.predict(X)
 classif.score(X,Y)
 plt.legend(loc='upper left')
 
-#%%
+#%% difit classifcicaiton
 digits = datasets.load_digits()
 
 images_and_labels  = list(zip(digits.images,digits.target))
