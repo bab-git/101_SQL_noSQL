@@ -131,7 +131,6 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-break
 i = 0
 #year_prob=[]
 while i < len(device_db):
@@ -178,7 +177,7 @@ while i < len(device_db):
                                                          'extra','checkid','deviceid']).sort_values(by = 
 #                                                        'servertime')#, ascending = False)
                                                         ['checkid','servertime'])#, ascending = False)                              
-        temp = device_db.loc[[i],['device_name','client_name','site_name','Type']].iloc[0]
+        temp = device_db.loc[i,['device_name','client_name','site_name','Type']]
         check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
         check_SQL = check_SQL.reset_index(drop = True)
         check_SQL['consFails'] = ''
