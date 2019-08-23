@@ -131,7 +131,8 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-#i = 0
+break
+i = 0
 #year_prob=[]
 while i < len(device_db):
 #while i <= len(device_db):shab mi
@@ -287,7 +288,7 @@ while i < len(device_db):
               ============================="""
               )
     i += 1
-         
+break    
 #%%==================== Check the running operations
 a=db.current_op()
 print(len(a['inprog'])-1,'operation is still running')

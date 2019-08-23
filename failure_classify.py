@@ -45,7 +45,8 @@ last_row = book['Sheet1'].max_row
 print("%d rows in the excel file" % last_row)
 fails = pd.read_excel(excel_path, header = 7)
 fails.fillna('', inplace=True)
-fails['excel_ind'] = fails.index
+#fails.dtypes
+fails['excel_row'] = fails.index+9
 fails = fails.drop(fails[fails['Label']==''].index).reset_index(drop = True)
 #fails = fails.drop(fails[fails['device_name']==''].index).reset_index(drop = True)
 
@@ -65,11 +66,14 @@ fails_select[['deviceid','checkid',
               'dsc247','consecutiveFails','Label']] = fails_select[['deviceid','checkid',
                                           'dsc247','consecutiveFails','Label']].apply(pd.to_numeric, errors='coerce')
 # %% to numpy
-feat_names = ['checkstatus','consecutiveFails','dsc247',
-                                              'checkid','Label']
+feat_names = ['checkstatus','consecutiveFails','dsc247','checkid','Label']
 fails_mat = fails_select[feat_names].to_numpy()
 #np.c_[fails_mat,np.array(fails_select['servertime'])]
 X = fails_mat[:,0:4]
+#X = np.delete(X, 1 , axis = 1)
+#X[X[:,1]>1,1] = 2
+
+
 y = fails_mat[:,4]
 datasets = (X,y)
 # %% classificaiton
@@ -79,6 +83,12 @@ class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
 X_train, X_test, y_train, y_test = \
         train_test_split(X,y,test_size = .2, random_state = 42)
 
+#X_train, X_test= \
+#        np.delete(X_train, 1 , axis = 1), np.delete(X_test, 1 , axis = 1)
+#X_train[X_train[:,1]>1,1] = 2
+#X_test[X_test[:,1]>1,1] = 2
+        
+        
 names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
          "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
          "Naive Bayes"
@@ -107,7 +117,8 @@ classifiers = [
 #for name, clf in zip(names,classifiers):
 #        ax = plt.subplot(1, len(classifiers) + 1, i)
     name , clf = names[4], classifiers[4]
-    clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 10)
+    clf = DecisionTreeClassifier(random_state = 0)
+#    clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 10)
 #    clf = RandomForestClassifier(n_estimators= 250,random_state = 0)
     clf.fit(X_train,y_train)
     score = clf.score(X_test, y_test)
