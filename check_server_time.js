@@ -4,15 +4,15 @@ db.getCollection('check').find(
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
             servertime: {
-                            "$gte": new ISODate("2019-01-02 01:00:00.000Z"),
-                            "$lte": new ISODate("2019-08-12 23:59:59.000Z")
+                            "$gte": new ISODate("2019-07-31 15:00:00.000Z"),
+                            "$lte": new ISODate("2019-07-31 18:59:59.000Z")
                           },
 //             {checkstatus: {$ne:"testok"}},
-            checkstatus : "testok_inactive",
+//             checkstatus : "testok_inactive",
 //             {description: {$search:"Anti"}},
-            checkid:"30928254",
+            checkid:"16879861",
 //             {description:{$not:/Anti/}},
-            deviceid:609254,
+            deviceid:745934,
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],
@@ -30,5 +30,5 @@ db.getCollection('check').find(
 )
 // .count()
 //     .limit(50)
-    .sort({servertime: 1})
+//     .sort({servertime: 1})
 //     .sort({checkid: 1})
