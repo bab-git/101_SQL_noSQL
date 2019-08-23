@@ -107,18 +107,19 @@ classifiers = [
 #for name, clf in zip(names,classifiers):
 #        ax = plt.subplot(1, len(classifiers) + 1, i)
     name , clf = names[4], classifiers[4]
-    clf = DecisionTreeClassifier(random_state = 0)
+    clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 10)
 #    clf = RandomForestClassifier(n_estimators= 250,random_state = 0)
     clf.fit(X_train,y_train)
-    score = clf.score(X_test, y_test)    
-    print(name,' score : ',score)        
+    score = clf.score(X_test, y_test)
+    print(name,' score : ',score)
         
     y_pred = clf.predict(X_test)
     print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
     metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
     
+    clf.fit(X,y)
     figure = plt.figure(figsize=(20,10))
-    tree.plot_tree(clf, filled=True, feature_names = feat_names, class_names = list(class_names.values()))
+    tree.plot_tree(clf, filled=True, feature_names = feat_names, class_names = list(class_names.values()));
 
     i += 1
 # %%

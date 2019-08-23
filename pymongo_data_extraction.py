@@ -5,6 +5,8 @@ Created on Tue Jul 30 13:55:19 2019
 The pipeline to extract data from mongoDB and saving in excell file
 for further annotation.
 
+A part is dedicated to data completion for case we need the trajectory of the fails on occation
+
 @author: Babak Hosseini
 """
 print(__doc__)
@@ -29,29 +31,6 @@ os.chdir('C:\\101_task')
 
 clients = db['client']
 checks = db['check']
-#%%=======================
-pprint.pprint(clients.find_one(
-        {
-#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
-            "name":"101 - Busold Consulting"
-        }))
-#%%=======================
-result = checks.find_one(
-        {
-#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
-            "deviceid":1156225
-        })
-
-pprint.pprint(result)
-#%%============
-results = checks.find(
-        {
-            "deviceid":1156225
-        }
-        ).limit(2)
-
-for result in results:
-    pprint.pprint(result)
 #%%============
 clients.count_documents({})
 #%%============ ?? list of enabled devices
@@ -308,14 +287,7 @@ while i < len(device_db):
               ============================="""
               )
     i += 1
-        
-    
-#%%
-pd.DataFrame({values:df_her1.values,
-                           'Percentage':price_ratio},
-                            index = shorten_names).sort_values(by = 'preis',ascending=False)      
- 
-
+         
 #%%==================== Check the running operations
 a=db.current_op()
 print(len(a['inprog'])-1,'operation is still running')
@@ -417,9 +389,27 @@ for i_t in range(0,10):
     some_results = list(results)
 end = time.time()
 print(end - start)
-#%% test
-a=1
-b=2
-if (a == 1 and 
-        b==2):
-    print('dsadas')
+
+#%%=======================    test commands
+pprint.pprint(clients.find_one(
+        {
+#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
+            "name":"101 - Busold Consulting"
+        }))
+#%==============================================
+result = checks.find_one(
+        {
+#                servertime: {"$gt": new ISODate("2019-07-26 01:00:55.000Z")}
+            "deviceid":1156225
+        })
+
+pprint.pprint(result)
+#%===================================
+results = checks.find(
+        {
+            "deviceid":1156225
+        }
+        ).limit(2)
+
+for result in results:
+    pprint.pprint(result)
