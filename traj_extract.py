@@ -83,7 +83,7 @@ while row_ind < len(fails_select.index):
     check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime',
                                     'client_name','site_name','extra',
-                                    'dsc247','deviceid','checkid','consecutiveFails']]    
+                                    'dsc247','deviceid','checkid','consecutiveFails']]
     
     print('Saving', len(check_SQL_last), 'extracted trajectory to the SQL table...')   
     excel_path = 'Check_trajectory.xlsx'
