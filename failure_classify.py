@@ -29,8 +29,9 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.datasets import make_classification, make_moons, make_circles
 from matplotlib.colors import ListedColormap
 from sklearn.svm import SVC
+from sklearn import tree    
 
-
+os.chdir('C:\\101_task')
 
 # %% importing annotated data from excell file
 excel_path = 'Checks list - update_ 19.08.xlsx'
@@ -70,19 +71,24 @@ feat_names = ['checkstatus','consecutiveFails','dsc247','checkid','Label']
 fails_mat = fails_select[feat_names].to_numpy()
 #np.c_[fails_mat,np.array(fails_select['servertime'])]
 X = fails_mat[:,0:4]
-#X = np.delete(X, 1 , axis = 1)
+X = np.delete(X, [range(3)] , axis = 1)
 #X[X[:,1]>1,1] = 2
 
 
-y = fails_mat[:,4]
+y = fails_mat[:,4].copy()
+y[y<4] = 1;
+y[y==4] = 2;
+
+class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
+class_names = {1:'Normal', 2:'on watch'}
+
 datasets = (X,y)
 # %% classificaiton
-class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
 #X=StandardScaler().fit_transform(X)
 #X[:,3] = StandardScaler().fit_transform(X[:,3].reshape(-1,1)).reshape(1,-1)
 X_train, X_test, y_train, y_test = \
-        train_test_split(X,y,test_size = .2, random_state = 42)
-
+        train_test_split(X,y,test_size = .2)#, random_state = 42)
+#print(X_train[:4])
 #X_train, X_test= \
 #        np.delete(X_train, 1 , axis = 1), np.delete(X_test, 1 , axis = 1)
 #X_train[X_train[:,1]>1,1] = 2
@@ -109,7 +115,7 @@ classifiers = [
         ]
 
 #h = .02  # step size in the mesh
-# %%
+# %%    
     i = 1;
     print("Labels:", np.unique(y_test),', names: ',[class_names[x] for x in np.unique(y_test)])
 #fails_select.columns[[int(x) for x in np.unique(y_test)]
@@ -127,6 +133,12 @@ classifiers = [
     y_pred = clf.predict(X_test)
     print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
     metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
+    miss_ind = np.where(y_pred!=y_test)[0]
+    for i in miss_ind:      
+        if X_test[i] in X_train:
+            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
+            
+    
     
     clf.fit(X,y)
     figure = plt.figure(figsize=(20,10))
@@ -207,4 +219,61 @@ plt.xlim([-1, X.shape[1]])
 plt.title('Random Forest')
 plt.show()
 
+# %% Visualization PCA / LDA / TSNE
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+plt.close('all')
+Xc = np.copy(X);
 
+yc=y.copy();
+
+target_names = list(class_names.values())
+
+
+Xc[Xc[:,1]>12,1]= 12;
+yc[yc!=4]=1
+yc[yc==4]=2
+target_names = [target_names[0],target_names[3]]
+
+pca = PCA(n_components = 2, whiten = False)
+X_r = pca.fit(Xc).transform(Xc)
+
+lda = LinearDiscriminantAnalysis(n_components=2)
+X_r2 = lda.fit(Xc,yc).transform(Xc)
+if X_r2.shape[1]==1:
+    X_r2=np.insert(X_r2,1,1,axis=1)
+# Percentage of variance explained for each components
+print('explained variance ratio (first two components): %s'
+      % str(pca.explained_variance_))
+
+fig1 = plt.figure()
+colors = ['navy', 'turquoise', 'darkorange', 'green']
+lw = 2
+
+for color, i, target_name in zip(colors,range(1,int(yc.max())+1), target_names):
+    plt.scatter(X_r[yc == i ,0], X_r[yc == i ,1], color = color, alpha = 0.8 , 
+                lw = lw, label = target_name)
+plt.legend(loc='best', shadow=False, scatterpoints=1)
+plt.title('PCA of data')
+#plt.xscale('linear')
+ax = fig1.add_subplot(111);
+for i, xy in zip(range(1,len(X_r)+1),X_r):
+    ax.annotate('% s' % i, xy = xy, textcoords = 'data') 
+
+
+fig2 = plt.figure(2)
+for color, i, target_name in zip(colors, range(1,int(yc.max())+1), target_names):
+    plt.scatter(X_r2[yc == i, 0], X_r2[yc == i, 1], alpha=.8, color=color,
+                label=target_name)
+ax = fig2.add_subplot(111);
+#for i, xy in zip(range(1,len(X_r)+1),X_r):
+#    ax.annotate('% s' % i, xy = xy, textcoords = 'data')
+    
+plt.legend(loc='best', shadow=False, scatterpoints=1)
+#plt.xscale('log')
+plt.xscale('linear')
+plt.title('LDA of data')
+
+
+
+plt.show()

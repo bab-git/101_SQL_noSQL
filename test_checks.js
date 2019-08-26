@@ -8,8 +8,8 @@ db.getCollection('check').find(
 //                 {datetime: { "$gt" : new ISODate("2019-02-04 01:00:10.000Z")}},
 //                 {datetime: { "$lt" : new ISODate("2019-07-01 01:00:17")}}
                servertime: { 
-                            "$gte" : ISODate("2019-07-30 00:00:00"),
-                            "$lt" : ISODate("2019-07-31 23:59:59")
+                            "$gte" : ISODate("2019-06-01 06:00:00"),
+                            "$lt" : ISODate("2019-07-30 07:59:59")
                            },
 //                {datetime: { "$lt" : new ISODate("2019-02-04 18:50:00")}},
 //                    {datetime: { "$gt" : new Date("2018-12-03")}},
@@ -19,8 +19,9 @@ db.getCollection('check').find(
 //                 {checkid: {$in: ["23538852","22261308"]}}
 //                {description : /Festplattenspei/},
 //                {checkstatus : "testerror"}
-               deviceid: 590459,
-//                {checkid: "28226123"}
+//                deviceid: 1057500,
+               consecutiveFails: {"$gt":1}
+//                checkid: "26868037",
 //                checkstatus: {$ne:"testok"}
 //             ]                         
         }     
@@ -36,5 +37,5 @@ db.getCollection('check').find(
 //         ,projection = { 'servertime': False }
     )
 //         .limit(50)
-//         .count()
-        .sort({servertime: -1})
+//         .count()
+        .sort({servertime: 1})
