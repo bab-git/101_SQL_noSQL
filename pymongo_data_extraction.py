@@ -33,8 +33,6 @@ clients = db['client']
 checks = db['check']
 #%%============
 clients.count_documents({})
-#%%============ ?? list of enabled devices
-
 #%%============ find last entry
 pipeline = [ 
             {"$match":{
@@ -132,20 +130,21 @@ device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
 i = 0
-#year_prob=[]
+year_prob=[]
 while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
-    #device_id = WK_list[i]['_id']
-    print('Getting checks for device_id:',i,'/',len(device_db),'...')
+    #device_id = WK_list[i]['_id']    
     device_id = int(device_db['_id'][i])
+    print('Getting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
+#    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
     #  %%
 #    del resultsd
     results = checks.find(
                 {
                     "servertime":
                     {
-                                    "$gte": datetime(2019,7,30,0,0,0),
+                                    "$gte": datetime(2019,6,1,0,0,0),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
                     "deviceid":device_id,
@@ -182,10 +181,11 @@ while i < len(device_db):
         check_SQL = check_SQL.reset_index(drop = True)
         check_SQL['consFails'] = ''
         check_SQL['last_fail'] = ''
-        check_SQL0 = check_SQL  # for debuging - todo remove
+        check_SQL0 = check_SQL.copy()  # for debuging - todo remove
         
         check_current = check_SQL.loc[0,'checkid']
         check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
+        check_SQL.loc[0,'last_fail'] = check_SQL.loc[0,'servertime']
         dsc247 = check_SQL['dsc247'][0]
 #        check_next = check_current
         
@@ -196,23 +196,23 @@ while i < len(device_db):
 #        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
 #        temp_SQL.loc[0,'index_last'] = 0
         i_f = 1
-        i_g = 1
-     #  %%   loop over the rows
+#        i_g = 1
+     # %%   loop over the rows
         while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
 #                break                    
             check_next = check_SQL.loc[i_f,'checkid']
-#            if check_next == '16880065':
-#                break
+            if check_next == '17118400':
+                break
             if check_next == check_current:  # same check
                 seq = 0  # flags the existing sequence
 
 #                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
 #                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
-                if check_SQL['last_fail'][i_f-1]=='':
-                    a = check_SQL['servertime'][i_f-1]
-                else:
-                    a = check_SQL['last_fail'][i_f-1]
+#                if check_SQL['last_fail'][i_f-1]=='':
+#                    a = check_SQL['servertime'][i_f-1]
+#                else:
+                a = check_SQL['last_fail'][i_f-1]
                 b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
                 cons_a = check_SQL['consecutiveFails'][i_f-1]
@@ -241,11 +241,12 @@ while i < len(device_db):
                     check_SQL.loc[i_f-1,'extra'] = check_SQL.loc[i_f,'extra']
                     check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
                     i_f -= 1
-                    check_SQL.loc[i_f,'last_fail'] = b
-                    check_SQL.loc[i_f,'consFails'] = cons_b                                        
+                    
+                check_SQL.loc[i_f,'last_fail'] = b
+                check_SQL.loc[i_f,'consFails'] = cons_b
             else:  # new check
                 dsc247 = check_SQL['dsc247'][i_f]
-                
+                check_SQL.loc[i_f,'last_fail'] = check_SQL.loc[i_f,'servertime']
 #                check_current = check_next
 #               ?? here?? dsc247 = check_SQL['dsc247'][i_f]
                 
@@ -258,8 +259,8 @@ while i < len(device_db):
 #            temp_SQL.loc[i_match,'index_last'] = i_f        
 #            temp_SQL.loc[i_match,'last_fail'] = b
             i_f += 1
-            i_g += 1
-        #  %%                        
+#            i_g += 1
+        # %%                        
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
@@ -287,8 +288,8 @@ while i < len(device_db):
               ============================="""
               )
     i += 1
-break    
 #%%==================== Check the running operations
+#break    
 a=db.current_op()
 print(len(a['inprog'])-1,'operation is still running')
 #if len(a['inprog']) > 1:
@@ -312,12 +313,10 @@ results = checks.find(
                                     "$gte": datetime(2019,6,1,0,0,1),
                                     "$lte": datetime(2019,7,31,23,59,59)
                                     },    
-                    "deviceid":557108
-
-,
+                    "deviceid":755131,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "29965746"
+                    "checkid": "17118388"
                 }
                 )
 some_results = list(results)
