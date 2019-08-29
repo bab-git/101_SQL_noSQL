@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "mongodb-251112",
+  "private_key_id": "b0c86ac086ef6058ae7a63372162b4cfde73c991",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDWaBwrem1HFWHr\n1O84OYPkkpeLvhUJxegT6IVVlF+TDdb6IRSva4Yu8p458SH2iqtkUej0Lz/LfTZ9\nKjLJprvk5rHD1no+anonecdpJKgMlPnmtIyGeGQ9z5KFIYNIbp7sjBYbpPJb8uj7\nillnfpKtNl3H+thipmV+iIN81mv8KTcHqeXqrlx3TlGreAL/qRWR17/j/KjtZlF8\nbsbalFwsG3E7HIyUeLLlhJ0vzOo0vi5IfelWniC8R+gXbeJeIRqEtiw1XLAsYwp2\n6wvNZsHs4A9j2UIjq7uV1BxVnix1mH0PfUzmkYkat8esuQc9ro0Xa7qW9vHpwMMN\n7eH/5PLTAgMBAAECggEAQBt9/MQM45mxny2aX3HXDWOFe4uYx8TMeRNntqh4EUSs\nmDqG8FKSmvwBMmr2kDxzNbpGEKkGBqaIQdF5wRChEralxVweTgZRQvdnF/mVY7mx\npPksIVLjChZEBZl5IxGsZCcYvyhJLRQK9Jcv10GhwrfEP7SxuYFuTHCt/Agy3oC6\nIDujLzbUFi4D0FufHzAl/KBD+2F1aVAc0wBFgQ41Psab09igqKEidSOchQEWDGz6\n5SWRlf8u/n2ahDibEYcWZzg88BvH+QjTaYJTpwE+CPd23W3JkP+99x+HuZb66BTl\nMAILDKf0+8fH0CwzzUjONYKLNIbPuxfBHjb2PNxLSQKBgQDxhFvzWqn6p/Ub6Nw+\n91G8keEo9DhcqD8bFc0R8NbREN3dnpy+fxDgyPkDNpFR5rtnZGeQic+XqgLSkf71\nkv3OzO0FCHCtZ8FG36EdGtNS8A2QXVFyAZ7NYzD8YMvxmgiAC9dy3Sb0MGs3YvTG\n10JAjcVdGWjDF8CrKWRDqxdumQKBgQDjQ5E1sezWHuHURtAOOg9jO2pMSs/ogGsw\nvhvEAtIpTSJ8kQ45fornUVSWACLHXKYgtl6YdGDIcz6LmsCk+kw1EStZJEA9yBcK\n0bwp89pJbobX7c+e3uB0Kqlbw0XAF6QQhTjr5JnstCaku/lOQutrpWHEyCU3C6V9\nfLBjHrdsSwKBgHA24Uo2i9eshhQLo5mV6+JDnWwb3LwgaAG7pWZ6kjTdM1ivQ4C3\nJS5r8lbt2aNGIzisy/m6Ljv3gAw6TU3omAin6lB2VXQcSw8VBJSzTBCy/HphAWCJ\nJDGlrrL0fo2o1d44okf6PQkkHgzD65sflObNeDADiEttE9XzC2Ttb5uxAoGABKLn\nPnovw7qDjuoW6oNitvqKU54fGbYs+aSXOmt4UCFjt7jZ2nBrcwakvB6qlvib5wTx\nbxjItK4tM3nnvjXhAiAki0ADE3+WgMEAnrZ72I2psJQIbUxMtfH83INiU+XnkfK1\n05IpVbvjIe83ydHxrZOFKBeRMstJCANYMd15jnsCgYBMPvdjcLmjoyPrPIo+3df+\nY6E4Oswb/SOF7n7Pr4nB6uasejXfeA/cY3NeU9+Q5oVrtlIcqKR5oxPGD9BVKTnz\nkrCaW0Qsz3JvAw0f1EOF6wGL664I0LTgVthNCyH5I5SKesa0OYLW1ZRKHjgAgPKV\nnL4tbAZ8mVVHI6AsTIwLgw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "mongodb@mongodb-251112.iam.gserviceaccount.com",
+  "client_id": "116738959939336625117",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mongodb%40mongodb-251112.iam.gserviceaccount.com"
+}
