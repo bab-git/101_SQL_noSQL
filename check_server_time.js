@@ -4,8 +4,9 @@ db.getCollection('check').find(
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
             servertime: {
-                            "$gte": new ISODate("2019-06-09 15:00:00.000Z"),
-                            "$lte": new ISODate("2019-06-11 18:59:59.000Z")
+                            "$gte": new ISODate("2019-03-01 15:00:00.000Z"),
+                            "$lte": new ISODate("2019-03-01 18:59:59.000Z"),
+                            "$ne": false    
                           },
             checkstatus: {$ne:"testok"},
 //             checkstatus : "testok_inactive",
@@ -14,7 +15,7 @@ db.getCollection('check').find(
 //             description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/,
 //             description: /Festplattenspeicherüberprüfung/,
 //             extra: /Insgesamt:/
-            description : /Gerät: MAV Deinstallation/
+//             description : /Gerät: MAV Deinstallation/
 //             description: {$not: /Engine A/}
 //             Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine A/B
 //             extra :{$not:/Backupjob:/}
@@ -22,7 +23,7 @@ db.getCollection('check').find(
 //             Skriptüberprüfung - Terra Backup
 //             checkid:"16879861",
 //             {description:{$not:/Anti/}},
-//             deviceid:745934,
+            deviceid:1141533,
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],

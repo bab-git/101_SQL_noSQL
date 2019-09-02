@@ -15,7 +15,7 @@ db.getCollection("check").aggregate(
 //                     {description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/}
 //                     {description: /Festplattenspeicherüberprüfung - Laufwerk/}
 //                     {checkstatus: {$ne:"testok"}},
-                    {description: /Deinstallation/}
+                    {description: /t: FastBootOff/}
                 ]
             }               
         },

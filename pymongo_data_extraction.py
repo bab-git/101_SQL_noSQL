@@ -11,6 +11,7 @@ A part is dedicated to data completion for case we need the trajectory of the fa
 """
 print(__doc__)
 
+import pickle
 import time
 import os.path
 import numpy as np
@@ -61,15 +62,15 @@ def H_annot(checkname,extra):
     if wrong_find:
         pr = 'ignore'    
     elif normal_find:
-        pr = 'N'
+        pr = 1
     elif checkname.find('Terra Backup') >= 0:
-        pr = 'H'
+        pr = 2
     elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
-        ext = extra[extra.find('Frei:')+7:]        
+        ext = extra[extra.find('Frei:')+5:]
         if int(ext[:ext.find('GB')-4]) < 5:
-            pr = 'H'
+            pr = 2
         else:
-            pr = 'N'
+            pr = 1
     return pr
 #%%================= test H_annot
     H_annot()
@@ -126,16 +127,29 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-#i = 0
-#year_prob=[]
+save_file = 'check_extraction.sav'
+#loaded_data = pickle.load( open(save_file, "rb" ))
+
+i = 0
+year_prob=[]
+DB_col_list = ['device_name','Type','checkstatus',
+                                    'description','servertime','last_fail',
+                                    'client_name','site_name','extra',
+                                    'dsc247','deviceid','checkid','consecutiveFails',
+                                    'Label']
+check_DB=pd.DataFrame(columns = DB_col_list)
+#check_DB=pd.DataFrame(columns = DB_col_list+['Label'])
+
+
 while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']    
+    # %%
     device_id = int(device_db['_id'][i])
     print('Getting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
-    #  %%
+    
 #    del resultsd
     results = checks.find(
                 {
@@ -150,18 +164,15 @@ while i < len(device_db):
                     "checkstatus": {"$ne":"testok"},
 #                    "checkid": "16880587"
                 }
-#                ,projection={ 'servertime': False }
+                ,projection={'datetime': False}
                 )
-    try:
-        check_results = list(results)
-#    except Exception as ex:
-    except pymongo.errors.InvalidBSON:
-#       template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-#       message = template.format(type(ex).__name__, ex.args)
-       print('year format prblem ==> skip the device')
-       i+=1
-       year_prob.append(device_id)
-       continue
+#    try:
+    check_results = list(results)
+#    except pymongo.errors.InvalidBSON:
+#       print('year format prblem ==> skip the device')
+#       i+=1
+#       year_prob.append(device_id)
+#       break
     #  %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
@@ -184,31 +195,25 @@ while i < len(device_db):
         check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
         check_SQL.loc[0,'last_fail'] = check_SQL.loc[0,'servertime']
         dsc247 = check_SQL['dsc247'][0]
-#        check_next = check_current
-        
-#        temp_SQL = check_SQL[check_SQL.index == 0]
-#        ch_id_hist = np.array(check_SQL['checkid'][0])        
-#        temp_SQL = pd.concat([temp_SQL,pd.DataFrame(columns = ['last_fail','index_last'])], sort=False)
-#        check_SQL['last_fail'] = '' 
-#        temp_SQL.loc[0,'last_fail'] = check_SQL['servertime'][0]
-#        temp_SQL.loc[0,'index_last'] = 0
+       
         i_f = 1
-#        i_g = 1
      # %%   loop over the rows
         while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
 #                break                    
             check_next = check_SQL.loc[i_f,'checkid']
-            if check_next == '17118400':
-                break
+            checkname = check_SQL.loc[i_f,'description']
+            extra = check_SQL.loc[i_f,'extra']
+            if H_annot(checkname,extra)=='ignore': # check-definite label 3 case
+                check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+                print('ignore')
+                continue
+            
+#            if check_next == '29637804':
+#                break
             if check_next == check_current:  # same check
                 seq = 0  # flags the existing sequence
 
-#                i_match = temp_SQL.checkid == check_SQL['checkid'][i_f]
-#                a = temp_SQL['last_fail'][i_match].reset_index(drop = True)[0]            
-#                if check_SQL['last_fail'][i_f-1]=='':
-#                    a = check_SQL['servertime'][i_f-1]
-#                else:
                 a = check_SQL['last_fail'][i_f-1]
                 b = check_SQL['servertime'][i_f]
                 cons_b = check_SQL['consecutiveFails'][i_f]
@@ -242,22 +247,43 @@ while i < len(device_db):
                 check_SQL.loc[i_f,'last_fail'] = b
                 check_SQL.loc[i_f,'consFails'] = cons_b
             else:  # new check
+                # categorizing previous row#                
+                checkname = check_SQL.loc[i_f-1,'description']
+                extra = check_SQL.loc[i_f-1,'extra']
+                pr = H_annot(checkname,extra)
+                if pr == 'ignore':
+                    check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+                    i_f -= 1
+                    print('ignore')
+                elif (pr==1)|(pr==2): # check-definite label H/N case
+#                    break
+                    temp = check_SQL.loc[i_f-1,DB_col_list]
+                    temp['consecutiveFails'] = check_SQL.loc[i_f-1,'consFails']
+                    temp['Label'] = pr
+                    check_DB= check_DB.append(temp,ignore_index=True)
+                    print('Add')                    
+#                    break                                        
+                # adding new row
                 dsc247 = check_SQL['dsc247'][i_f]
                 check_SQL.loc[i_f,'last_fail'] = check_SQL.loc[i_f,'servertime']
-#                check_current = check_next
-#               ?? here?? dsc247 = check_SQL['dsc247'][i_f]
-                
-#                temp_SQL = temp_SQL.append(check_SQL.iloc[i_f],ignore_index=True)
-#                i_match = len(temp_SQL)-1;        
-#                ch_id_hist = np.append(ch_id_hist,check_SQL['checkid'][i_f])
+
             if check_SQL['consFails'][i_f]=='':
                     check_SQL.loc[i_f,'consFails'] = check_SQL.loc[i_f,'consecutiveFails']
             check_current = check_next                
-#            temp_SQL.loc[i_match,'index_last'] = i_f        
-#            temp_SQL.loc[i_match,'last_fail'] = b
             i_f += 1
-#            i_g += 1
-        # %%                        
+
+        # Annotate last entry   
+        pr = H_annot(checkname,extra)
+        if pr == 'ignore': # check-definite label 3 case
+            check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+        elif (pr==1)|(pr==2): # check-definite label H/N case
+            temp = check_SQL.loc[i_f-1,DB_col_list]
+            temp['consecutiveFails'] = check_SQL.loc[i_f-1,'consFails']
+            temp['Label'] = pr
+            check_DB= check_DB.append(temp,ignore_index=True)     
+            check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+        # %%        
+                
         check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                     'description','servertime','last_fail',
                                     'client_name','site_name','extra',
@@ -285,6 +311,11 @@ while i < len(device_db):
               ============================="""
               )
     i += 1
+
+    save_file = 'check_extraction.sav'
+    pickle.dump([i,year_prob], open(save_file, 'wb'))
+#    loaded_data = pickle.load( open(filename, "rb" ))
+    
 #%%==================== Check the running operations
 #break    
 a=db.current_op()
@@ -307,14 +338,17 @@ print(len(a['inprog'])-1,'operation is still running')
 results = checks.find(
                 {
                     "servertime": {
-                                    "$gte": datetime(2019,6,1,0,0,1),
-                                    "$lte": datetime(2019,7,31,23,59,59)
+                                    "$gte": datetime(2019,3,1,0,0,1),
+                                    "$lte": datetime(2019,3,1,23,59,59),
+#                                    "$ne": "false"
                                     },    
-                    "deviceid":755131,
+#                    "servertime": datetime(2019,3,1,18,51,21),
+                    "deviceid":1141533,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "17118388"
+#                    "checkid": "17118388"
                 }
+                ,projection={'datetime': False}
                 )
 some_results = list(results)
 partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
@@ -324,6 +358,9 @@ partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
                                                         ['checkid','servertime'])#, ascending = False)    
 
 partial_SQL.head(2)
+#ISODate("2019-03-01T16:39:48.000Z") 1141533
+#2019-03-01 18:09:40.000Z 745934
+#2019-03-01 16:39:48.000Z
 # %% performance test
 del results
 start = time.time()
