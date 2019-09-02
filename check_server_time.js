@@ -4,15 +4,25 @@ db.getCollection('check').find(
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
             servertime: {
-                            "$gte": new ISODate("2019-07-31 15:00:00.000Z"),
-                            "$lte": new ISODate("2019-07-31 18:59:59.000Z")
+                            "$gte": new ISODate("2019-06-09 15:00:00.000Z"),
+                            "$lte": new ISODate("2019-06-11 18:59:59.000Z")
                           },
-//             {checkstatus: {$ne:"testok"}},
+            checkstatus: {$ne:"testok"},
 //             checkstatus : "testok_inactive",
-//             {description: {$search:"Anti"}},
-            checkid:"16879861",
+//             description: /Terra Backup/,
+//             description: /Anti-Virus-Aktualisierungsüberprüfung/,
+//             description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/,
+//             description: /Festplattenspeicherüberprüfung/,
+//             extra: /Insgesamt:/
+            description : /Gerät: MAV Deinstallation/
+//             description: {$not: /Engine A/}
+//             Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine A/B
+//             extra :{$not:/Backupjob:/}
+//             description: /Kinect/
+//             Skriptüberprüfung - Terra Backup
+//             checkid:"16879861",
 //             {description:{$not:/Anti/}},
-            deviceid:745934,
+//             deviceid:745934,
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],
@@ -29,6 +39,6 @@ db.getCollection('check').find(
 //     }    
 )
 // .count()
-//     .limit(50)
+    .limit(50)
 //     .sort({servertime: 1})
-//     .sort({checkid: 1})
+//     .sort({deviceid: 1})

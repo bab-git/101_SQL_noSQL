@@ -21,6 +21,8 @@ from openpyxl import load_workbook
 #from pymongo import Connection
 from pymongo import MongoClient
 import pprint
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 Mclient = MongoClient('mongodb://192.168.2.208:27018')
 
@@ -33,51 +35,46 @@ clients = db['client']
 checks = db['check']
 #%%============
 clients.count_documents({})
-#%%============ find last entry
-pipeline = [ 
-            {"$match":{
-                        "$and":[
-                                  {"servertime":
-                                      {"$gte": datetime(2019,7,31),"$lt": datetime(2019,8,1)}},
-                                  {"deviceid":1035046}
-                                ]
-                     }},            
+#%%============  read false sheet data
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
 
-            {"$group":
-                {
-                  "_id":"$deviceid",    
-                  "max_time":{"$max":"$servertime"},
-#                  "count": {"$sum":1},
-                }}
-            #{"$limit":1},                                                                     
-           ]
+# Find a workbook by name and open the first sheet
+# Make sure you use the right name here.
+sheet = client.open("check-short-list").sheet1
+#sheet = client.open("Checks comparison").sheet1
+list_of_false = sheet.get_all_values()
+false_SQL=pd.DataFrame(list_of_false)#, ascending = False)  
+head_SQL = pd.Series(['name','H priority','threshold','wrong'])
+#head_SQL = false_SQL.iloc[1]
+false_SQL = false_SQL[1:]
+false_SQL = false_SQL.rename(columns = head_SQL)
+wrong_checks = false_SQL.loc[(false_SQL['wrong'] == 'TRUE') | (false_SQL['H priority'] == 'NA'),'name']
+normal_checks = false_SQL.loc[false_SQL['H priority'] == 'FALSE','name']
 
-#{"deviceid":1035046}
-#{"$gte": 'new ISODate("2019-07-31 00:00:08.000Z")'}},
-agg_result = list(db.check.aggregate(pipeline))[0]
-pprint.pprint(agg_result)
-T_end = agg_result['max_time']
-#%%==================== another sample
-pipeline2 = [ 
-            {"$match":{
-                        "$and":[
-                                  {"servertime":
-                                      {"$gte": datetime(2019,7,31),"$lt": T_end}},
-                                  {"deviceid":1035046}
-                                ]
-                     }},            
+def H_annot(checkname,extra):
+    pr = 'NA'
+    #find wrong check
+    wrong_find =list(filter(lambda i: checkname.find(i) >=0,wrong_checks))
+    normal_find =list(filter(lambda i: checkname.find(i) >=0,normal_checks))
+    if wrong_find:
+        pr = 'ignore'    
+    elif normal_find:
+        pr = 'N'
+    elif checkname.find('Terra Backup') >= 0:
+        pr = 'H'
+    elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
+        ext = extra[extra.find('Frei:')+7:]        
+        if int(ext[:ext.find('GB')-4]) < 5:
+            pr = 'H'
+        else:
+            pr = 'N'
+    return pr
+#%%================= test H_annot
+    H_annot()
 
-            {"$group":
-                {
-                  "_id":"$deviceid",    
-                  "max_time":{"$max":"$servertime"},
-#                  "count": {"$sum":1},
-                }}
-            #{"$limit":1},                                                                     
-           ]
-agg_result = list(db.check.aggregate(pipeline2))[0]
-T_end_1 = agg_result['max_time']
-Ts=T_end.hour-T_end_1.hour   # sampling time
+
 #%%==================== List of active devices for the month
 # getting list of device ids for WK ans servers
 pipelin3 = [
@@ -129,8 +126,8 @@ SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
 #%%==================== loop of getting faield checks - for the month
-i = 0
-year_prob=[]
+#i = 0
+#year_prob=[]
 while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
@@ -412,3 +409,48 @@ results = checks.find(
 
 for result in results:
     pprint.pprint(result)
+    #%%============ find last entry
+pipeline = [ 
+            {"$match":{
+                        "$and":[
+                                  {"servertime":
+                                      {"$gte": datetime(2019,7,31),"$lt": datetime(2019,8,1)}},
+                                  {"deviceid":1035046}
+                                ]
+                     }},            
+
+            {"$group":
+                {
+                  "_id":"$deviceid",    
+                  "max_time":{"$max":"$servertime"},
+#                  "count": {"$sum":1},
+                }}
+            #{"$limit":1},                                                                     
+           ]
+
+#{"deviceid":1035046}
+#{"$gte": 'new ISODate("2019-07-31 00:00:08.000Z")'}},
+agg_result = list(db.check.aggregate(pipeline))[0]
+pprint.pprint(agg_result)
+T_end = agg_result['max_time']
+#%%==================== last-1 entry
+pipeline2 = [ 
+            {"$match":{
+                        "$and":[
+                                  {"servertime":
+                                      {"$gte": datetime(2019,7,31),"$lt": T_end}},
+                                  {"deviceid":1035046}
+                                ]
+                     }},            
+
+            {"$group":
+                {
+                  "_id":"$deviceid",    
+                  "max_time":{"$max":"$servertime"},
+#                  "count": {"$sum":1},
+                }}
+            #{"$limit":1},                                                                     
+           ]
+agg_result = list(db.check.aggregate(pipeline2))[0]
+T_end_1 = agg_result['max_time']
+Ts=T_end.hour-T_end_1.hour   # sampling time

@@ -1,1 +1,4 @@
-db.killOP(110270080)
+db.currentOp(
+//      {$unwind: {path: "$inprog"}}
+    )
+db.killOP(685054995)
