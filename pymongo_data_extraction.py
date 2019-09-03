@@ -68,8 +68,11 @@ def H_annot(checkname,extra):
 #    elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
 #        ind_F = extra.find('Frei:')
 #        if ind_F >=0:
-#            ext = extra[ind_F+5:]
-#            if int(ext[:ext.find('GB')-4]) < 5:
+#            ext = extra[ind_F+5:]            
+#            num = ext[:ext.find('GB')]
+#            num=num.replace('.','')
+#            num=num.replace(',','.')
+#            if float(num) < 5:
 #                pr = 'H'  # high P   
 #            else:
 #                pr = 'nH'  # high P   
@@ -147,73 +150,14 @@ excel_path = 'check_list.xlsx'
 if os.path.isfile(excel_path):
     os.remove(excel_path)
 
-# %%
-while i < len(device_db):
-#while i <= len(device_db):shab mi
-#    i = 0
-    #device_id = WK_list[i]['_id']    
-    # %%
-    device_id = int(device_db['_id'][i])
-    print('Getting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
-#    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
-    
-#    del resultsd
-    results = checks.find(
-                {
-                    "servertime":
-                    {
-                                    "$gte": datetime(2019,6,1,0,0,0),
-                                    "$lte": datetime(2019,7,31,23,59,59)
-                                    },    
-#                    "deviceid":device_id,
-                    "deviceid":1054972,
-    #                "dsc247":2, 
-                    "checkstatus": {"$ne":"testok"},
-                    "checkid": "26706789"
-                }
-                ,projection={'datetime': False}
-                )
-#    try:
-    check_results = list(results)
-#    except pymongo.errors.InvalidBSON:
-#       print('year format prblem ==> skip the device')
-#       i+=1
-#       year_prob.append(device_id)
-#       break
-    #  %%
-    len_fails = len(check_results)
-    print('number of failed checks:',len_fails)
-# %%
-    if len(check_results) == 0:
-        i+=1
-        continue
-    print('Prepaing the SQL table...')
-    check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
-                                                     'checkstatus','consecutiveFails','dsc247',
-                                                     'extra','checkid','deviceid']).sort_values(by = 
-#                                                        'servertime')#, ascending = False)
-                                                    ['checkid','servertime'])#, ascending = False)                              
-    temp = device_db.loc[i,['device_name','client_name','site_name','Type']]
-    check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
-    check_SQL = check_SQL.reset_index(drop = True)
-    check_SQL['consFails'] = ''
-    check_SQL['last_fail'] = ''
-    check_SQL0 = check_SQL.copy()  # for debuging - todo remove
-    
-    check_current = check_SQL.loc[0,'checkid']
-    check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
-    check_SQL.loc[0,'last_fail'] = check_SQL.loc[0,'servertime']
-    dsc247 = check_SQL['dsc247'][0]
-   
-    i_f = 1
- # %%   loop over the rows
+# %%===========   loop over the devices
 while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']    
     #  %%
     device_id = int(device_db['_id'][i])
-    print('Getting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
+    print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
 #    device_id = 1054972
 #    del resultsd
@@ -245,7 +189,7 @@ while i < len(device_db):
 #  %%
     if len(check_results) == 0:
         i+=1
-#        continue
+        continue
     print('Prepaing the SQL table...')
     check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
                                                      'checkstatus','consecutiveFails','dsc247',
@@ -265,7 +209,7 @@ while i < len(device_db):
     dsc247 = check_SQL['dsc247'][0]
    
     i_f = 1
- #  %%   loop over the rows
+ #  %%   loop over the check-fail rows
     while i_f < len(check_SQL):
 #            if check_SQL['servertime'][i_f] >= datetime(2019,6,3,7,10,0):
 #                break   
@@ -358,7 +302,7 @@ while i < len(device_db):
         temp['Label'] = pr
         check_DB= check_DB.append(temp,ignore_index=True)     
         check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
-    # %%        
+    #  %%        
             
     check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                 'description','servertime','last_fail',
@@ -366,8 +310,18 @@ while i < len(device_db):
                                 'dsc247','deviceid','checkid','consFails']]
     check_SQL_last = check_SQL_last.rename(columns = {"consFails":"consecutiveFails"})
     check_SQL_last = check_SQL_last.sort_values(by = 'servertime')
-        
-    print('Saving', len(check_SQL_last), 'extracted failes to the SQL table...')        
+    
+    #----------- save python data
+    save_file = 'check_extraction.sav'
+    pickle.dump({'device_i':i,'check_DB':check_DB}, open(save_file, 'wb'))
+    
+    #----------- save to files
+    if len(check_SQL_last) == 0:
+        print('0 checks remained to save to the excel file...')
+        i += 1
+        continue
+    
+    print('Saving', len(check_SQL_last), 'extracted failes to the excel file...')        
     if not os.path.isfile(excel_path):
         check_SQL_last.to_excel(excel_path, index = False)
     else: # appending to the excell file
@@ -383,11 +337,10 @@ while i < len(device_db):
         writer.save()
     print("""
           =========== tabel saved =====
-          ============================="""
+          =============================
+          """
           )
-    i += 1
-    save_file = 'check_extraction.sav'
-    pickle.dump({'device_i':i,'check_DB':check_DB}, open(save_file, 'wb'))
+    i += 1    
 #    loaded_data = pickle.load( open(filename, "rb" ))
     
 #%%==================== Check the running operations
