@@ -160,6 +160,7 @@ while i < len(device_db):
     print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
 #    device_id = 1054972
+#    i = device_db.loc[device_db['_id']==1054972,'_id'].index[0]            
 #    del resultsd
     results = checks.find(
                 {
@@ -292,16 +293,19 @@ while i < len(device_db):
         check_current = check_next                
         i_f += 1
 #  %%
-    # Annotate last entry of SQL table  
+    # -------Annotate last entry of SQL table
+    i_f = len(check_SQL)-1
+    checkname = check_SQL.loc[i_f,'description']
+    extra = check_SQL.loc[i_f,'extra']
     pr = H_annot(checkname,extra)
     if pr == 'ignore': # check-definite label 3 case
-        check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
     elif (pr=='nH')|(pr=='H'): # check-definite label H/N case
-        temp = check_SQL.loc[i_f-1,DB_col_list[:len(DB_col_list)-1]]
-        temp['consecutiveFails'] = check_SQL.loc[i_f-1,'consFails']
+        temp = check_SQL.loc[i_f,DB_col_list[:len(DB_col_list)-1]]
+        temp['consecutiveFails'] = check_SQL.loc[i_f,'consFails']
         temp['Label'] = pr
         check_DB= check_DB.append(temp,ignore_index=True)     
-        check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
     #  %%        
             
     check_SQL_last = check_SQL[['device_name','Type','checkstatus',
