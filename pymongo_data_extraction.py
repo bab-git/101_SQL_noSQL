@@ -65,17 +65,21 @@ def H_annot(checkname,extra):
         pr = 'nH'
     elif checkname.find('Terra Backup') >= 0:
         pr = 'H'
-#    elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
-#        ind_F = extra.find('Frei:')
-#        if ind_F >=0:
-#            ext = extra[ind_F+5:]            
-#            num = ext[:ext.find('GB')]
-#            num=num.replace('.','')
-#            num=num.replace(',','.')
-#            if float(num) < 5:
-#                pr = 'H'  # high P   
-#            else:
-#                pr = 'nH'  # high P   
+    elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
+        ind_1 = extra.find('t:')
+        if ind_1 >=0:
+            tot_size = extra[ind_1+2:extra.find('GB')]
+            tot_size=float(tot_size.replace('.','').replace(',','.'))
+           
+#            ind_F = 
+            ext = extra[extra.find('Frei:')+5:]
+            free_size = ext[:ext.find('GB')]
+            free_size=float(free_size.replace('.','').replace(',','.'))
+                        
+            if free_size/tot_size < .2:  # 20% free threshold
+                pr = 'H'  # high P   
+            else:
+                pr = 'nH'  # high P   
     return pr
 #%%================= test H_annot
 #    H_annot()
@@ -131,7 +135,9 @@ SV_db = pd.DataFrame(SV_list)
 SV_db['Type'] = "server"
 device_db = pd.concat([SV_db,WK_db], ignore_index = True)
 device_db.head(2)
-#%%==================== loop of getting faield checks - for the month
+#%%===========================================================================
+#==================== Extracting faield checks from scracth! - for the month
+#===========================================================================
 save_file = 'check_extraction.sav'
 #loaded_data = pickle.load( open(save_file, "rb" ))
 #i = loaded_data ['device_i']
@@ -150,7 +156,7 @@ excel_path = 'check_list.xlsx'
 if os.path.isfile(excel_path):
     os.remove(excel_path)
 
-# %%===========   loop over the devices
+#  %%===========   loop over the devices
 while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
@@ -346,7 +352,23 @@ while i < len(device_db):
           )
     i += 1    
 #    loaded_data = pickle.load( open(filename, "rb" ))
+#%%    
+break    
+#%%===========================================================================
+#==================== Updating g-sheet based on the short-list  (H-annot)
+#===========================================================================    
+modif_code = 'green'  # Enter this code if you really want to modify the spreadsheet
+get_code = input("DO YOU WANT TO MODIFY THE SPREAD SHEET?!\n")
+if get_code != modif_code:
+    print('dsadsa')
+    raise ValueError('You cannot modify the spread sheet!!')
     
+
+
+
+
+
+
 #%%==================== Check the running operations
 #break    
 a=db.current_op()

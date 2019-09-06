@@ -34,21 +34,40 @@ from sklearn import tree
 os.chdir('C:\\101_task')
 
 # %% importing annotated data from excell file
-excel_path = 'Checks list - update_ 19.08.xlsx'
-print('Reading data from the excel sheet...')        
-try:
-    os.path.isfile(excel_path)
-except:
-    print("file not found")
+#from gspread_pandas import Spread
+#Spread.sheet_to_df
+
+head_ind=8        # index of the header
+label_col = 14
+
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+
+# Find a workbook by name and open the first sheet
+sheet = client.open("Checks list").sheet1
+
+#read the label column from the spreadsheet
+label_list = sheet.col_values(label_col)
+
+labeled_rows = list(filter(lambda x: label_list[x] != '', range(head_ind,len(label_list))))
+labeled_rows = [int(x) for x in labeled_rows]
+
+#fails_select = sheet.row_values(8)
+headers = sheet.row_values(head_ind)
+all_values = sheet.get_all_values()
+fails  = pd.DataFrame([all_values[i] for i in labeled_rows] , columns = headers)
+
     
-book = load_workbook(excel_path)
-last_row = book['Sheet1'].max_row
-print("%d rows in the excel file" % last_row)
-fails = pd.read_excel(excel_path, header = 7)
-fails.fillna('', inplace=True)
+#reading from excel
+#book = load_workbook(excel_path)
+#last_row = book['Sheet1'].max_row
+#print("%d rows in the excel file" % last_row)
+#fails = pd.read_excel(excel_path, header = 7)
+#fails.fillna('', inplace=True)
 #fails.dtypes
-fails['excel_row'] = fails.index+9
-fails = fails.drop(fails[fails['Label']==''].index).reset_index(drop = True)
+#fails['excel_row'] = fails.index+9
+#fails = fails.drop(fails[fails['Label']==''].index).reset_index(drop = True)
 #fails = fails.drop(fails[fails['device_name']==''].index).reset_index(drop = True)
 
 # %% quantifying the features

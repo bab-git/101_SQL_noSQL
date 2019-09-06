@@ -16,6 +16,8 @@ from openpyxl import load_workbook
 #from pymongo import Connection
 from pymongo import MongoClient
 import pprint
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 Mclient = MongoClient('mongodb://192.168.2.208:27018')
 
@@ -29,14 +31,28 @@ checks = db['check']
 #%%==================== Extracting trajectory data on demand
 start_ind = 8    # start and end row indexes to be processed in the excell file
 end_ind = 209
-head_ind=7        # index of the header
-excel_path = 'Checks list.xlsx' 
-#book = load_workbook(excel_path)   
-if os.path.isfile(excel_path):
-    print('Reading data from the excel sheet...')
-else:
-    print("file not found") 
-    
+head_ind=8        # index of the header
+
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+
+# Find a workbook by name and open the first sheet
+sheet = client.open("Checks list").sheet1
+#sheet = client.open("Checks comparison").sheet1
+#list_of_false = sheet.get_all_values()
+#false_SQL=pd.DataFrame(list_of_false)#, ascending = False)  
+
+#read the label column from the spreadsheet
+label_list = sheet.col_values(14)
+
+list_4 = list(filter(lambda x: label_list[x-1] == '4', range(len(label_list)+1)))
+
+fails_select = sheet.row_values(8)
+headers = sheet.row_values(head_ind)
+ 
+todp: HERE!!
+
 headers = pd.read_excel(excel_path, header = head_ind,nrows = 0 )
 #np.where(fails_temp.columns=='Label')
 #label_cl=list(fails_temp.columns).index('Label')
