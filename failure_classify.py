@@ -79,9 +79,10 @@ fails_select = pd.DataFrame(fails, columns = ['checkstatus','consecutiveFails','
 # convert strings to numbers
 check_dic = {'testok':1, 'testerror':2, 'testalertdelayed':3,'testcleared':4,'test_inactive':5, 'testok_inactive':6,'testerror_inactive':7}
 fails_select['checkstatus']=list(map(lambda x:check_dic[x],fails_select['checkstatus']))
+fails_select['servertime'] = [np.datetime64(a).astype(datetime) for a in fails_select['servertime']]
 
 #fails_select['servertime'] = list(map(lambda x: np.datetime64(x).astype(datetime),fails_select['servertime']))
-time_index = list(map(lambda x: np.datetime64(x).astype(datetime),fails_select['servertime']))
+#time_index = list(map(lambda x: np.datetime64(x).astype(datetime),fails_select['servertime']))
 fails_select[['deviceid','checkid',
               'dsc247','consecutiveFails','Label']] = fails_select[['deviceid','checkid',
                                           'dsc247','consecutiveFails','Label']].apply(pd.to_numeric, errors='coerce')

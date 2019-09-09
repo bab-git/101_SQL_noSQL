@@ -381,7 +381,8 @@ sheet = client.open("Checks list").sheet1
 headers = sheet.row_values(head_ind)
 all_values = sheet.get_all_values()
 SQL_cpy = pd.DataFrame(all_values)
-SQL_cpy.to_excel('check_modify_copy.xlsx', index = False)
+SQL_cpy.to_excel('check_modify_%s.xlsx' %(str(datetime.now())[:19]), index = False)
+#print('check_modify_%s.xlsx' %(str(datetime.now())[:19]))
 
 #checks  = pd.DataFrame(all_values[head_ind:], columns = headers)
 sheet_checks  = pd.DataFrame(all_values, columns = headers)
