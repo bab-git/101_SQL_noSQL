@@ -459,10 +459,14 @@ while i_check< len(sheet_checks):
         check_DB2.loc[0] = sheet_checks.loc[i_check,DB_col_list]
         check_DB2['Label'] = pr
         check_DB2['servertime'] = [np.datetime64(a).astype(datetime) for a in check_DB2['servertime']]
-        check_DB2['last_fail'] = [np.datetime64(a).astype(datetime) for a in check_DB2['last_fail']]
-        check_DB2['dsc247'] = [int(a) for a in check_DB2['dsc247']]
-        check_DB2['deviceid'] = [int(a) for a in check_DB2['deviceid']]
-        check_DB2['consecutiveFails'] = [int(a) for a in check_DB2['consecutiveFails']]                
+        check_DB2['last_fail'] = [np.datetime64(a).astype(datetime) for a in check_DB2['last_fail']]                
+        check_DB2[['deviceid',
+              'dsc247','consecutiveFails']] = check_DB2[['deviceid','dsc247',
+                                          'consecutiveFails']].apply(pd.to_numeric, errors='coerce')
+        
+#        check_DB2['dsc247'] = [int(a) for a in check_DB2['dsc247']]
+#        check_DB2['deviceid'] = [int(a) for a in check_DB2['deviceid']]
+#        check_DB2['consecutiveFails'] = [int(a) for a in check_DB2['consecutiveFails']]                
         
         check_DB3 = pd.DataFrame(check_DB.iloc[ind_add+1:])
         check_DB = pd.concat([check_DB1, check_DB2, check_DB3],  ignore_index=True)        
@@ -521,10 +525,10 @@ results = checks.find(
 #                                    "$ne": "false"
                                     },    
 #                    "servertime": datetime(2019,3,1,18,51,21),
-                    "deviceid":1054972,
+                    "deviceid":1206088,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "26706784"
+                    "checkid": "31384237"
                 }
                 ,projection={'datetime': False}
                 )

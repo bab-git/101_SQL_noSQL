@@ -70,37 +70,76 @@ fails  = pd.DataFrame([all_values[i] for i in labeled_rows] , columns = headers)
 #fails = fails.drop(fails[fails['Label']==''].index).reset_index(drop = True)
 #fails = fails.drop(fails[fails['device_name']==''].index).reset_index(drop = True)
 
-# %% quantifying the features
+# %% quantifying the features + combine with checkDB
+load_file = 'check_extraction.sav'
+loaded_data = pickle.load( open(save_file, "rb" ))
+check_DB = loaded_data['check_DB']
+
 #fails.drop(['description', 'servertime', 'device_name'])
-fails_select = pd.DataFrame(fails, columns = ['checkstatus','consecutiveFails','dsc247',
+fails_select1 = pd.DataFrame(fails, columns = ['checkstatus','consecutiveFails','dsc247',
                                               'checkid','deviceid','Label','servertime',
-                                              'extra'])
+                                              'description','extra'])
+
+fails_select2 = pd.DataFrame(check_DB, columns = ['checkstatus','consecutiveFails','dsc247',
+                                              'checkid','deviceid','Label','servertime',
+                                              'description','extra'])
+
+fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
+
+# only H and nH:
+fails_select.loc[(fails_select['Label']=='3') | (fails_select['Label']=='1'),'Label'] = 'nH'
+fails_select.loc[fails_select['Label']=='2','Label'] = 'H'
+
+check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')
+fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop = True)
+
+#fails_select1['Label'] = fails_select1['Label'].apply(pd.to_numeric, errors='coerce')
+
 
 # convert strings to numbers
-check_dic = {'testok':1, 'testerror':2, 'testalertdelayed':3,'testcleared':4,'test_inactive':5, 'testok_inactive':6,'testerror_inactive':7}
+check_stats = ['testerror','testalertdelayed','testcleared','test_inactive', 
+             'testok_inactive','testerror_inactive','testok']
+check_dic={}
+for value in range(0,len(check_stats)):
+    check_dic[check_stats[value]] = value+1
+
 fails_select['checkstatus']=list(map(lambda x:check_dic[x],fails_select['checkstatus']))
 fails_select['servertime'] = [np.datetime64(a).astype(datetime) for a in fails_select['servertime']]
 
 #fails_select['servertime'] = list(map(lambda x: np.datetime64(x).astype(datetime),fails_select['servertime']))
 #time_index = list(map(lambda x: np.datetime64(x).astype(datetime),fails_select['servertime']))
 fails_select[['deviceid','checkid',
-              'dsc247','consecutiveFails','Label']] = fails_select[['deviceid','checkid',
-                                          'dsc247','consecutiveFails','Label']].apply(pd.to_numeric, errors='coerce')
+              'dsc247','consecutiveFails']] = fails_select[['deviceid','checkid',
+                                          'dsc247','consecutiveFails']].apply(pd.to_numeric, errors='coerce')
+
+# ----------------- quantify check description
+check_names = fails_select.description.unique()
+#{key:value for (key,value) in check_list}
+check_list = {}
+for value in range(0,len(check_names)):
+    check_list[check_names[value]] = value+1
+fails_select = fails_select.drop('checkid', axis = 1)
+fails_select['checkid'] = [check_list[i] for i in fails_select['description']]
+
+
 # %% to numpy
-feat_names = ['checkstatus','consecutiveFails','dsc247','checkid','Label']
+#feat_names = ['checkstatus','consecutiveFails','dsc247','checkid','Label']
+feat_names = ['checkstatus','consecutiveFails','dsc247','checkid']
 fails_mat = fails_select[feat_names].to_numpy()
 #np.c_[fails_mat,np.array(fails_select['servertime'])]
-X = fails_mat[:,0:4]
-X = np.delete(X, [range(3)] , axis = 1)
+X = fails_mat[:,0:4].copy()
+#X = np.delete(X, [range(3)] , axis = 1)
 #X[X[:,1]>1,1] = 2
 
 
-y = fails_mat[:,4].copy()
-y[y<4] = 1;
-y[y==4] = 2;
+#y = fails_mat[:,4].copy()
+y = fails_select['Label'].copy()
+#y[y<4] = 1;
+#y[y==4] = 2;
 
-class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
-class_names = {1:'Normal', 2:'on watch'}
+#class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
+#class_names = {1:'Normal', 2:'on watch'}
+class_names = {'nH':'not High', 'H':'High'}
 
 datasets = (X,y)
 # %% classificaiton

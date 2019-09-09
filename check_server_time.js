@@ -8,12 +8,12 @@ db.getCollection('check').find(
                             "$lte": new ISODate("2019-07-31 18:59:59.000Z"),
                             "$ne": false    
                           },
-            checkstatus: {$ne:"testok"},
-//             checkstatus : "testok_inactive",
+//             checkstatus: {$ne:"testok"},
+//             checkstatus : "add",
 //             description: /Terra Backup/,
 //             description: /Anti-Virus-Aktualisierungsüberprüfung/,
 //             description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/,
-//             description: /Festplattenspeicherüberprüfung/,
+//             description: /Leistungsüberwachung - Festplatte/,
 //             extra: /Insgesamt:/
 //             description : /Gerät: MAV Deinstallation/
 //             description: {$not: /Engine A/}
@@ -39,7 +39,7 @@ db.getCollection('check').find(
 //         servertime:1        
 //     }    
 )
-// .count()
-    .limit(50)
+.count()
+//     .limit(50)
 //     .sort({servertime: 1})
 //     .sort({deviceid: 1})
