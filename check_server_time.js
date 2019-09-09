@@ -4,8 +4,8 @@ db.getCollection('check').find(
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
             servertime: {
-                            "$gte": new ISODate("2019-03-01 15:00:00.000Z"),
-                            "$lte": new ISODate("2019-03-01 18:59:59.000Z"),
+                            "$gte": new ISODate("2019-06-01 15:00:00.000Z"),
+                            "$lte": new ISODate("2019-07-31 18:59:59.000Z"),
                             "$ne": false    
                           },
             checkstatus: {$ne:"testok"},
@@ -23,7 +23,7 @@ db.getCollection('check').find(
 //             Skriptüberprüfung - Terra Backup
 //             checkid:"16879861",
 //             {description:{$not:/Anti/}},
-            deviceid:1141533,
+//             deviceid:1141533,
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],

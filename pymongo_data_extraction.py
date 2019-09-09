@@ -162,12 +162,12 @@ while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']    
-    #  %%
-    device_id = int(device_db['_id'][i])
-    print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')
+    # %%
+#    device_id = int(device_db['_id'][i])
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
-#    device_id = 1054972
-#    i = device_db.loc[device_db['_id']==1054972,'_id'].index[0]            
+    device_id = 992525
+    i = device_db.loc[device_db['_id']==device_id,'_id'].index[0]            
+    print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')    
 #    del resultsd
     results = checks.find(
                 {
@@ -191,7 +191,7 @@ while i < len(device_db):
 #       i+=1
 #       year_prob.append(device_id)
 #       break
-    #  %%
+    # %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
 #  %%
@@ -397,7 +397,7 @@ sheet_checks  = pd.DataFrame(all_values, columns = headers)
 
 
 i_check = 0
-#%%
+#  %%
 while i_check< len(sheet_checks):
 
     g_rmd = 0
@@ -521,10 +521,10 @@ results = checks.find(
 #                                    "$ne": "false"
                                     },    
 #                    "servertime": datetime(2019,3,1,18,51,21),
-                    "deviceid":1085384,
+                    "deviceid":1054972,
     #                "dsc247":2,
 #                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "27734051"
+                    "checkid": "26706784"
                 }
                 ,projection={'datetime': False}
                 )
