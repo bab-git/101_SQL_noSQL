@@ -24,6 +24,7 @@ from pymongo import MongoClient
 import pprint
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import shutil
 
 Mclient = MongoClient('mongodb://192.168.2.208:27018')
 
@@ -360,8 +361,9 @@ break
 modif_code = 'green'  # Enter this code if you really want to modify the spreadsheet
 get_code = input("DO YOU WANT TO MODIFY THE SPREAD SHEET?!\n")
 if get_code != modif_code:
-    print('dsadsa')
+#    print('dsadsa')
     raise ValueError('You cannot modify the spread sheet!!')
+print('Taking the backup of the google sheet and check_DB before modification...')
     
 
 load_file = 'check_extraction.sav'
@@ -377,33 +379,46 @@ client = gspread.authorize(creds)
 sheet = client.open("Checks list").sheet1
 #sheet2 = client.open("temp2").sheet1
 
+
+cwd = os.getcwd()
+shutil.copy(cwd+'\\'+load_file,cwd+'\\'+'check_extraction_back_%s.sav' %(str(datetime.now().timestamp())[:10]))
+
 #fails_select = sheet.row_values(8)
 headers = sheet.row_values(head_ind)
 all_values = sheet.get_all_values()
 SQL_cpy = pd.DataFrame(all_values)
-SQL_cpy.to_excel('check_modify_%s.xlsx' %(str(datetime.now())[:19]), index = False)
+SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
 #print('check_modify_%s.xlsx' %(str(datetime.now())[:19]))
 
 #checks  = pd.DataFrame(all_values[head_ind:], columns = headers)
 sheet_checks  = pd.DataFrame(all_values, columns = headers)
+#sheet_checks['servertime'][head_ind:] = [np.datetime64(a).astype(datetime) for a in sheet_checks['servertime'][head_ind:]]
+#sheet_checks['last_fail'][head_ind:] = [np.datetime64(a).astype(datetime) for a in sheet_checks['last_fail'][head_ind:]]
+
 
 i_check = 0
+#%%
 while i_check< len(sheet_checks):
-    extra = sheet_checks['extra'][i_check]
-    if extra == '':
+
+    g_rmd = 0
+    DB_rmd = 0
+    device_name = sheet_checks['device_name'][i_check]
+    if device_name == '':
         i_check +=1
         continue
     checkname = sheet_checks['description'][i_check]
     pr = H_annot(checkname,extra)
     
-    if pr == 'ignore':
-        print (i_check)
-        raise ValueError('ignore')
-        continue    
+    if pr == 'ignore': 
+        print ('Row %d: Removing from google sheet' %(i_check+1))
+        #        print (i_check)
+#        raise ValueError('ignore')
+#        continue    
     
-    elif (pr == 'H') | (pr == 'nH'):
-        print (i_check)
-        raise ValueError('H or nH')
+    if (pr == 'H') | (pr == 'nH'):
+        print ('Row %d: Transfering an %s label to checkDB' %(i_check+1,pr))
+#        print (i_check)
+#        raise ValueError('H or nH')
         
         g_row = sheet.row_values(i_check+1)
         SQL_row = sheet_checks.iloc[i_check].values.tolist()
@@ -434,7 +449,8 @@ while i_check< len(sheet_checks):
             ind_add = check_DB.loc[dev_ind & chk_ind].index[0]-1  # to the top of device-check list
         else:            
             ind_add = check_DB.loc[dev_ind & chk_ind & tm_ind ].index[0]-1  # after the device-check happened before this one
-            
+
+                    
         #--------- update check_DB                
         if ind_add == -1:
             ind_add =0
@@ -442,28 +458,36 @@ while i_check< len(sheet_checks):
         check_DB2 = pd.DataFrame(columns = DB_col_list)
         check_DB2.loc[0] = sheet_checks.loc[i_check,DB_col_list]
         check_DB2['Label'] = pr
+        check_DB2['servertime'] = [np.datetime64(a).astype(datetime) for a in check_DB2['servertime']]
+        check_DB2['last_fail'] = [np.datetime64(a).astype(datetime) for a in check_DB2['last_fail']]
+        check_DB2['dsc247'] = [int(a) for a in check_DB2['dsc247']]
+        check_DB2['deviceid'] = [int(a) for a in check_DB2['deviceid']]
+        check_DB2['consecutiveFails'] = [int(a) for a in check_DB2['consecutiveFails']]                
+        
         check_DB3 = pd.DataFrame(check_DB.iloc[ind_add+1:])
-        check_DB = pd.concat([check_DB1, check_DB2, check_DB3],  ignore_index=True)
+        check_DB = pd.concat([check_DB1, check_DB2, check_DB3],  ignore_index=True)        
         
-
-        
+    if (pr == 'ignore') | (pr == 'H') | (pr == 'nH'):
         #--------- update google sheet
         i_rmv = i_check
-        if sheet_checks.loc[i_check+1,'deviceid'] == '':
-            i_rmv = [i_check+1,i_check]
-            for row in i_rmv:
-                sheet.delete_row(row+1)
-        else:
+#        if (sheet_checks.loc[i_check+1,'deviceid'] == '') & (g_rmd == 0):
+#            i_rmv = [i_check+1,i_check]
+#            for row in i_rmv:
+#                sheet.delete_row(row+1)
+#            g_rmd = 1
+        if g_rmd == 0:
             sheet.delete_row(i_rmv+1)
+            g_rmd = 1
                 
         #--------- update local sheet
-        sheet_checks = sheet_checks.drop(i_rmv).reset_index(drop = True)
-        
-        
+        if DB_rmd  == 0:
+            sheet_checks = sheet_checks.drop(i_rmv).reset_index(drop = True)        
+            DB_rmd = 1
         
         
 #        save_file = 'check_extraction.sav'
         pickle.dump({'check_DB':check_DB}, open(load_file, 'wb'))
+#        g_rmd , DB_rmd = 0,0
         continue
     
     i_check +=1
