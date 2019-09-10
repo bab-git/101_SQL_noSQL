@@ -162,7 +162,7 @@ while i < len(device_db):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']    
-    # %%
+    #  %%
 #    device_id = int(device_db['_id'][i])
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
     device_id = 992525
@@ -191,7 +191,7 @@ while i < len(device_db):
 #       i+=1
 #       year_prob.append(device_id)
 #       break
-    # %%
+    #  %%
     len_fails = len(check_results)
     print('number of failed checks:',len_fails)
 #  %%
@@ -497,7 +497,89 @@ while i_check< len(sheet_checks):
     i_check +=1
 
 
+#%%===========================================================================
+#==================== Bringing not annotated cases or missed cases forward for annotation
+#===========================================================================    
+head_ind = 8
 
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("Checks list").sheet1
+sheet_g = Spread("Checks list")    
+sheet_g.open_sheet("Sheet1", create=False)
+
+headers = sheet.row_values(head_ind)
+all_values = sheet.get_all_values()
+SQL_cpy = pd.DataFrame(all_values)
+SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
+
+check_SQL  = pd.DataFrame(all_values, columns = headers)    
+
+label_list = sheet.col_values(headers.index('Label')+1)
+labeled_rows = list(filter(lambda x: label_list[x] != '', range(head_ind,len(label_list))))
+labeled_rows = [int(x) for x in labeled_rows]
+annot_checks = check_SQL.loc[labeled_rows,'description'].unique()
+all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
+rest_checks = check_SQL.loc[range(labeled_rows[len(labeled_rows)-1],len(check_SQL)),'description'].unique()
+last_annot = labeled_rows[len(labeled_rows)-1]+1
+    
+if len(all_checks) > len(annot_checks):  # need to bring forward not annotated checks
+    moved_dv = []
+    for check_i in all_checks:        
+        if check_i not in annot_checks: # new check
+           
+            row_ck = list(check_SQL['description']).index(check_i)
+            row_dv = list(check_SQL['deviceid']).index(check_SQL.loc[row_ck,'deviceid'])
+            deviceid = check_SQL.loc[row_ck,'deviceid']
+            
+            
+            if (last_annot+1) >= row_dv: # right place: after last annotation
+                moved_dv.append(temp.loc[temp.index[0],'deviceid'])
+                continue
+#            else:
+#                cond1= check_SQL.loc[list(check_SQL['description']).index(check_i)-1,'description'] not in annot_checks 
+#                cond2= check_SQL.loc[list(check_SQL['description']).index(check_i)-2,'description'] not in annot_checks            
+
+#            if cond1 | cond2: # right place 
+            elif deviceid in moved_dv:  # new check from already moved device
+                continue   
+
+            a = list(check_SQL.loc[range(row_dv),'deviceid'].unique())
+            if a[len(a)-1] in moved_dv: # new check after another new check
+                moved_dv.append(deviceid)
+                continue                        
+            else : # wrong place
+#                raise ValueError('new check')
+                print('Bringing a not-annotated check forward - check:' , check_i)
+                row_sql = list(check_SQL['description']).index(check_i)
+                device_id = check_SQL.loc[row_sql,'deviceid']
+                get_indexes = lambda x, xs: [i for (y, i) in zip(xs, range(len(xs))) if x == y]
+                rows_ind = get_indexes(device_id,check_SQL['deviceid'])
+                temp = check_SQL.iloc[rows_ind]
+                
+                rows_ind.reverse()
+                for row in rows_ind:
+                    sheet.delete_row(row+1)
+                
+                for i in range(0,len(temp)+1):
+                    sheet.insert_row(list(''), index = last_annot+1)                
+                sheet_g.df_to_sheet(temp, index=False, headers = False,sheet='Sheet1', start=(last_annot+2,1),  replace = False)
+                
+                all_values = sheet.get_all_values()
+                check_SQL  = pd.DataFrame(all_values, columns = headers)
+                label_list = sheet.col_values(headers.index('Label')+1)
+                labeled_rows = list(filter(lambda x: label_list[x] != '', range(head_ind,len(label_list))))
+                labeled_rows = [int(x) for x in labeled_rows]            
+                last_annot = labeled_rows[len(labeled_rows)-1]+1
+                
+                moved_dv.append(temp.loc[temp.index[0],'deviceid'])
+
+print('Samples of all new checks are brough forward')                
+
+            
+    
+    
 #%%==================== Check the running operations
 #break    
 a=db.current_op()

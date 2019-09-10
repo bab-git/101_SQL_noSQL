@@ -90,7 +90,7 @@ fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
 fails_select.loc[(fails_select['Label']=='3') | (fails_select['Label']=='1'),'Label'] = 'nH'
 fails_select.loc[fails_select['Label']=='2','Label'] = 'H'
 
-check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')
+check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')
 fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop = True)
 
 #fails_select1['Label'] = fails_select1['Label'].apply(pd.to_numeric, errors='coerce')
@@ -174,36 +174,43 @@ classifiers = [
         ]
 
 #h = .02  # step size in the mesh
-# %%    
-    i = 1;
-    print("Labels:", np.unique(y_test),', names: ',[class_names[x] for x in np.unique(y_test)])
+#  %%    
+i = 1;
+print("Labels:", np.unique(y_test),', names: ',[class_names[x] for x in np.unique(y_test)])
 #fails_select.columns[[int(x) for x in np.unique(y_test)]
 #figure = plt.figure(figsize=(10,7))
 #for name, clf in zip(names,classifiers):
 #        ax = plt.subplot(1, len(classifiers) + 1, i)
-    name , clf = names[4], classifiers[4]
-    clf = DecisionTreeClassifier(random_state = 0)
+name , clf = names[4], classifiers[4]
+clf = DecisionTreeClassifier(random_state = 0)
 #    clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 10)
 #    clf = RandomForestClassifier(n_estimators= 250,random_state = 0)
-    clf.fit(X_train,y_train)
-    score = clf.score(X_test, y_test)
-    print(name,' score : ',score)
+clf.fit(X_train,y_train)
+score = clf.score(X_test, y_test)
+#score = clf.score(X_train, y_train)
+print(name,' score : ',score)
+    
+y_pred = clf.predict(X_test)
+print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
+metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
+miss_ind = np.where(y_pred!=y_test)[0]
+#    for i in miss_ind:      
+#        if X_test[i] in X_train:
+#            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
         
-    y_pred = clf.predict(X_test)
-    print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
-    metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
-    miss_ind = np.where(y_pred!=y_test)[0]
-    for i in miss_ind:      
-        if X_test[i] in X_train:
-            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
-            
-    
-    
-    clf.fit(X,y)
-    figure = plt.figure(figsize=(20,10))
-    tree.plot_tree(clf, filled=True, feature_names = feat_names, class_names = list(class_names.values()));
 
-    i += 1
+
+clf.fit(X,y)
+#fig, ax = plt.figure(figsize=(20,10))
+fig, ax = plt.subplots(figsize=(40,10))
+tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = list(class_names.values()))
+#tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = ['a','b'])
+
+#tree.plot_tree(clf)
+
+#ax.plot(x,iris[column])
+
+i += 1
 # %%
 #from sklearn import tree    
 
