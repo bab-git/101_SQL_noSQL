@@ -29,7 +29,11 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.datasets import make_classification, make_moons, make_circles
 from matplotlib.colors import ListedColormap
 from sklearn.svm import SVC
-from sklearn import tree    
+from sklearn import tree   
+
+import pickle
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials 
 
 os.chdir('C:\\101_task')
 
@@ -72,7 +76,7 @@ fails  = pd.DataFrame([all_values[i] for i in labeled_rows] , columns = headers)
 
 # %% quantifying the features + combine with checkDB
 load_file = 'check_extraction.sav'
-loaded_data = pickle.load( open(save_file, "rb" ))
+loaded_data = pickle.load( open(load_file, "rb" ))
 check_DB = loaded_data['check_DB']
 
 #fails.drop(['description', 'servertime', 'device_name'])
@@ -86,9 +90,6 @@ fails_select2 = pd.DataFrame(check_DB, columns = ['checkstatus','consecutiveFail
 
 fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
 
-# only H and nH:
-fails_select.loc[(fails_select['Label']=='3') | (fails_select['Label']=='1'),'Label'] = 'nH'
-fails_select.loc[fails_select['Label']=='2','Label'] = 'H'
 
 check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')
 fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop = True)
@@ -120,9 +121,13 @@ for value in range(0,len(check_names)):
     check_list[check_names[value]] = value+1
 fails_select = fails_select.drop('checkid', axis = 1)
 fails_select['checkid'] = [check_list[i] for i in fails_select['description']]
+check_list_inv = {k:v for (v,k) in check_list.items()}
 
+# only H and nH:
+#fails_select.loc[(fails_select['Label']=='3') | (fails_select['Label']=='1'),'Label'] = 'nH'
+#fails_select.loc[fails_select['Label']=='2','Label'] = 'H'
 
-# %% to numpy
+# %% to numpy conversion
 #feat_names = ['checkstatus','consecutiveFails','dsc247','checkid','Label']
 feat_names = ['checkstatus','consecutiveFails','dsc247','checkid']
 fails_mat = fails_select[feat_names].to_numpy()
@@ -134,6 +139,7 @@ X = fails_mat[:,0:4].copy()
 
 #y = fails_mat[:,4].copy()
 y = fails_select['Label'].copy()
+
 #y[y<4] = 1;
 #y[y==4] = 2;
 
@@ -143,6 +149,16 @@ class_names = {'nH':'not High', 'H':'High'}
 
 datasets = (X,y)
 # %% classificaiton
+#X, y = datasets
+
+# only H and nH:
+#y[(y=='3') | (y=='1')] = 'nH'
+#y[y=='2'] = 'H'
+#---------- knowledge based classification: pre-annot list
+HERE!!
+
+#---------- model training
+
 #X=StandardScaler().fit_transform(X)
 #X[:,3] = StandardScaler().fit_transform(X[:,3].reshape(-1,1)).reshape(1,-1)
 X_train, X_test, y_train, y_test = \
@@ -194,10 +210,14 @@ y_pred = clf.predict(X_test)
 print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
 metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
 miss_ind = np.where(y_pred!=y_test)[0]
-#    for i in miss_ind:      
-#        if X_test[i] in X_train:
+miss_ch = [check_list_inv[X_test[i,-1]] for i in miss_ind]
+
+
+for i in miss_ind:      
+    if X_test[i,-1] not in X_train: # no training sample
+        name = list(filter(lambda item:item[1]== X_test[i,-1], check_list.items()))[0]
+        print('No train sample for check: %s' % name[0])
 #            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
-        
 
 
 clf.fit(X,y)

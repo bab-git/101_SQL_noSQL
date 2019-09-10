@@ -512,7 +512,7 @@ sheet_g.open_sheet("Sheet1", create=False)
 headers = sheet.row_values(head_ind)
 all_values = sheet.get_all_values()
 SQL_cpy = pd.DataFrame(all_values)
-SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
+#SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
 
 check_SQL  = pd.DataFrame(all_values, columns = headers)    
 
@@ -550,7 +550,7 @@ if len(all_checks) > len(annot_checks):  # need to bring forward not annotated c
                 moved_dv.append(deviceid)
                 continue                        
             else : # wrong place
-#                raise ValueError('new check')
+                raise ValueError('new check')
                 print('Bringing a not-annotated check forward - check:' , check_i)
                 row_sql = list(check_SQL['description']).index(check_i)
                 device_id = check_SQL.loc[row_sql,'deviceid']
