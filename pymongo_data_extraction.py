@@ -367,7 +367,7 @@ print('Taking the backup of the google sheet and check_DB before modification...
     
 
 load_file = 'check_extraction.sav'
-loaded_data = pickle.load( open(save_file, "rb" ))
+loaded_data = pickle.load( open(load_file, "rb" ))
 check_DB = loaded_data['check_DB']
 
 head_ind=8        # index of the header
@@ -407,6 +407,7 @@ while i_check< len(sheet_checks):
         i_check +=1
         continue
     checkname = sheet_checks['description'][i_check]
+    extra = sheet_checks['extra'][i_check]
     pr = H_annot(checkname,extra)
     
     if pr == 'ignore': 
