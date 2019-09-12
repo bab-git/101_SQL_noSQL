@@ -1,8 +1,8 @@
-// db.workstation.aggregate([
-//     { $match: {_id:992525}},    
+db.workstation.aggregate([
+    { $match: {_id:625873}},    
 //     { $match: {_id:1004254}},
-db.server.aggregate([
-    { $match: {_id:992525} },            
+// db.server.aggregate([
+//     { $match: {_id:625873.} },            
     {
         $lookup:
             {
