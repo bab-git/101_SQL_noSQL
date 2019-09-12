@@ -135,7 +135,7 @@ pipelin3 = [
             },
             {"$match": {"site.enabled" : True}},
             {"$match": {"client.apiKey":"ae0a4c75230afae756fcfecd3d2838cf"}},
-#            {"$match": {"dscLocalDate": {"$gt":datetime(2019,6,1)}}},
+#            {"$match": {"dscLocalDate": {"$gt":datetime(2019,7,1)}}},
 #            {"$count": "device count"},
             {
                     "$project": {
@@ -288,6 +288,7 @@ while i < len(device_db):
                 
             check_SQL.loc[i_f,'last_fail'] = b
             check_SQL.loc[i_f,'consFails'] = cons_b
+#            check_SQL.loc[i_f,'extra'] = extra
         else:  # new check            
             # adding new row
 #                break
@@ -387,6 +388,11 @@ if get_code != modif_code:
 print('Taking the backup of the google sheet and check_DB before modification...')
     
 
+load_file = 'new_devices_list.sav'
+loaded_data = pickle.load( open(load_file, "rb" ))
+device_db_new = loaded_data['device_db_new']
+
+
 load_file = 'check_extraction.sav'
 loaded_data = pickle.load( open(load_file, "rb" ))
 check_DB = loaded_data['check_DB']
@@ -445,21 +451,22 @@ DB_col_list = ['device_name','Type','checkstatus',
 #    os.remove(excel_path)
 
 # %%===========   loop over the devices
-while i < len(device_db):
+while i < len(device_db_new):
 #while i <= len(device_db):shab mi
 #    i = 0
     #device_id = WK_list[i]['_id']    
     #  %%
-    device_id = int(device_db['_id'][i])
-#    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
+    device_id = int(device_db_new['_id'][i])
+#    device_id = int(device_new[i])
+#    device_id=int(device_db_new['_id'][device_db_new['device_name']=='SRV-PR-01'])
 #    device_id = 625873
-#    i = device_db.loc[device_db['_id']==device_id,'_id'].index[0]            
+#    i = device_db_new.loc[device_db_new['_id']==device_id,'_id'].index[0]            
     if device_id in check_list:
         print(device_id, " device already added\n")
         i+=1
         continue
 
-    print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')    
+    print('\nGetting checks for device_id:',i,'/',len(device_db_new),'(%s)' % (device_db_new['device_name'][i]),'...')    
 #    del resultsd
     results = checks.find(
                 {
@@ -496,7 +503,7 @@ while i < len(device_db):
                                                      'extra','checkid','deviceid']).sort_values(by = 
 #                                                        'servertime')#, ascending = False)
                                                     ['checkid','servertime'])#, ascending = False)                              
-    temp = device_db.loc[i,['device_name','client_name','site_name','Type']]
+    temp = device_db_new.loc[i,['device_name','client_name','site_name','Type']]
     check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
     check_SQL = check_SQL.reset_index(drop = True)
     check_SQL['consFails'] = ''
@@ -560,6 +567,7 @@ while i < len(device_db):
                 
             check_SQL.loc[i_f,'last_fail'] = b
             check_SQL.loc[i_f,'consFails'] = cons_b
+            check_SQL.loc[i_f,'extra'] = extra
         else:  # new check            
             # adding new row
 #                break
@@ -911,13 +919,14 @@ results = checks.find(
 #                                    "$ne": "false"
                                     },    
 #                    "servertime": datetime(2019,3,1,18,51,21),
-                    "deviceid":625873,
+                    "deviceid":952849,
     #                "dsc247":2,
-#                    "checkstatus": {"$ne":"testok"},            
-                    "checkid": "13969034"
+#                    "checkstatus": {"$ne":"testok"},  
+#                    "description": 'Überprüfung des Dateisystemspeicherplatzes - Backup'
+                    "checkid": "23573768"
                 }
                 ,projection={'datetime': False}
-                )
+                )#.limit(50)
 some_results = list(results)
 partial_SQL=pd.DataFrame(some_results, columns = ['servertime','description',
                                                          'checkstatus','consecutiveFails','dsc247',
@@ -1059,3 +1068,6 @@ pipeline2 = [
 agg_result = list(db.check.aggregate(pipeline2))[0]
 T_end_1 = agg_result['max_time']
 Ts=T_end.hour-T_end_1.hour   # sampling time
+# =======================  new devices
+new_list = list(filter(lambda x: device_db.loc[x,'_id'] not in device_db1['_id'].values, range(len(device_db))))
+device_db_new = device_db.iloc[new_list]

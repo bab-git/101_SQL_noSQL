@@ -11,8 +11,8 @@ db.getCollection('check').find(
             checkstatus: {$ne:"testok"},
 //               extra: /Backupjob:/
 //             checkstatus : "add",
-            description: /Überprüfung des Dateisystemspeicherplatzes - /,
-//             description: /Anti-Virus-Aktualisierungsüberprüfung/,
+//             description: /Überprüfung des Dateisystemspeicherplatzes - /,
+            description: 'Überprüfung des Dateisystemspeicherplatzes - Backup',
 //             description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/,
 //             description: /Leistungsüberwachung - Festplatte/,
 //             extra: /Insgesamt:/
@@ -24,7 +24,7 @@ db.getCollection('check').find(
 //             Skriptüberprüfung - Terra Backup
 //             checkid:"16879861",
 //             {description:{$not:/Anti/}},
-//             deviceid:1141533,
+            deviceid:{$ne:625873},
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],
