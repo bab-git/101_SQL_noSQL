@@ -462,7 +462,7 @@ while i < len(device_db_new):
 #    device_id = 625873
 #    i = device_db_new.loc[device_db_new['_id']==device_id,'_id'].index[0]            
     if device_id in check_list:
-        print(device_id, " device already added\n")
+        print(device_id, "\n device already added\n")
         i+=1
         continue
 

@@ -88,7 +88,8 @@ fails_select2 = pd.DataFrame(check_DB, columns = ['checkstatus','consecutiveFail
                                               'checkid','deviceid','Label','servertime',
                                               'description','extra'])
 
-fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
+#fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
+fails_select = fails_select1.copy()   # only not definite cases
 
 
 check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')
@@ -138,7 +139,7 @@ X = fails_mat[:,0:4].copy()
 
 
 #y = fails_mat[:,4].copy()
-y = fails_select['Label'].copy()
+y = fails_select['Label'].to_numpy()
 
 #y[y<4] = 1;
 #y[y==4] = 2;
@@ -152,10 +153,10 @@ datasets = (X,y)
 #X, y = datasets
 
 # only H and nH:
-#y[(y=='3') | (y=='1')] = 'nH'
-#y[y=='2'] = 'H'
+y[(y=='3') | (y=='1')] = 'nH'
+y[y=='2'] = 'H'
 #---------- knowledge based classification: pre-annot list
-HERE!!
+#HERE!!
 
 #---------- model training
 
@@ -216,7 +217,7 @@ miss_ch = [check_list_inv[X_test[i,-1]] for i in miss_ind]
 for i in miss_ind:      
     if X_test[i,-1] not in X_train: # no training sample
         name = list(filter(lambda item:item[1]== X_test[i,-1], check_list.items()))[0]
-        print('No train sample for check: %s' % name[0])
+        print('No training for sample Nr. %d , class: %s - check: %s, ' % (i,name[0],str(y_test[i])))
 #            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
 
 
