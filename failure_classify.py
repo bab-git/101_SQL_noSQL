@@ -80,13 +80,12 @@ loaded_data = pickle.load( open(load_file, "rb" ))
 check_DB = loaded_data['check_DB']
 
 #fails.drop(['description', 'servertime', 'device_name'])
-fails_select1 = pd.DataFrame(fails, columns = ['checkstatus','consecutiveFails','dsc247',
+col_select = ['checkstatus','consecutiveFails','dsc247',
                                               'checkid','deviceid','Label','servertime',
-                                              'description','extra'])
+                                              'description','extra', 'last_fail']
+fails_select1 = pd.DataFrame(fails, columns = col_select)
 
-fails_select2 = pd.DataFrame(check_DB, columns = ['checkstatus','consecutiveFails','dsc247',
-                                              'checkid','deviceid','Label','servertime',
-                                              'description','extra'])
+fails_select2 = pd.DataFrame(check_DB, columns = col_select)
 
 #fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
 fails_select = fails_select1.copy()   # only not definite cases
@@ -94,6 +93,7 @@ fails_select = fails_select1.copy()   # only not definite cases
 
 check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')
 fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop = True)
+#fails_select=fails_select.reset_index(drop = True)
 
 #fails_select1['Label'] = fails_select1['Label'].apply(pd.to_numeric, errors='coerce')
 
@@ -139,22 +139,46 @@ X = fails_mat[:,0:4].copy()
 
 
 #y = fails_mat[:,4].copy()
-y = fails_select['Label'].to_numpy()
+fails_select['Label'] = [int(i) for i in fails_select['Label']]
+y = np.array(list(fails_select['Label']))
+
+#y = np.random.randint(1,3,len(X))
 
 #y[y<4] = 1;
 #y[y==4] = 2;
 
 #class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
 #class_names = {1:'Normal', 2:'on watch'}
-class_names = {'nH':'not High', 'H':'High'}
+#class_names = {'nH':'not High', 'H':'High'}
+class_names = {1:'not High', 2:'High'}
 
 datasets = (X,y)
+#%% manual pre-processing
+ind_rmv = np.where((X[:,0]==5))[0] # testokinactive data which should be cosidered as ok
+
+X = np.delete(X,ind_rmv, axis = 0)
+y = np.delete(y,ind_rmv)
+
+X[X[:,1]>1,1] = 2   # consfail>2 -->2
+
+X[(X[:,0]==2)|(X[:,0]==3) ,0] = 1   # checkstatus: testcleared , testalertdelayed == testerror
+
+# removing one-instance checks
+print('One-instance checks are removed from the database!!')
+#for i in X:
+#    if len
+
+fixed_list = ['Sicherungsüberprüfung',
+              ]
+
+
 # %% classificaiton
 #X, y = datasets
 
 # only H and nH:
-y[(y=='3') | (y=='1')] = 'nH'
-y[y=='2'] = 'H'
+y[(y==3) | (y==1)] = 1 #'nH'
+y[y==2] = 2 #'H'
+#X_test[X_test[:,1]>1,1] = 2
 #---------- knowledge based classification: pre-annot list
 #HERE!!
 
@@ -193,13 +217,13 @@ classifiers = [
 #h = .02  # step size in the mesh
 #  %%    
 i = 1;
-print("Labels:", np.unique(y_test),', names: ',[class_names[x] for x in np.unique(y_test)])
+print("Labels:", np.unique(y_test),', names: ',class_names)
 #fails_select.columns[[int(x) for x in np.unique(y_test)]
 #figure = plt.figure(figsize=(10,7))
 #for name, clf in zip(names,classifiers):
 #        ax = plt.subplot(1, len(classifiers) + 1, i)
 name , clf = names[4], classifiers[4]
-clf = DecisionTreeClassifier(random_state = 0)
+clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
 #    clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 10)
 #    clf = RandomForestClassifier(n_estimators= 250,random_state = 0)
 clf.fit(X_train,y_train)
@@ -209,29 +233,79 @@ print(name,' score : ',score)
     
 y_pred = clf.predict(X_test)
 print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
-metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
+conf_mat = metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
 miss_ind = np.where(y_pred!=y_test)[0]
 miss_ch = [check_list_inv[X_test[i,-1]] for i in miss_ind]
 
 
 for i in miss_ind:      
-    if X_test[i,-1] not in X_train: # no training sample
-        name = list(filter(lambda item:item[1]== X_test[i,-1], check_list.items()))[0]
-        print('No training for sample Nr. %d , class: %s - check: %s, ' % (i,name[0],str(y_test[i])))
+    if X_test[i,-1] not in X_train[:,-1]: # no training sample
+#        name = list(filter(lambda item:item[1]== X_test[i,-1], check_list.items()))[0]
+        name = check_list_inv[X_test[i,-1]]
+        print('No training for data: %d , class: %s - check: %s, ' % (i,name,str(y_test[i])))
 #            print ('Bad check! ind = %d , checkid = %d' % (i, X_test[i]), ' Train label:',y_train[X_train.flatten() == X_test[i]])
 
+H_missed_trained = list(filter(lambda i: (X_test[i,-1] in X_train[:,-1]) & (y_test[i]== 'H'), miss_ind))
+H_missed_trained_nm = [check_list_inv[X_test[i,-1]] for i in H_missed_trained]
 
-clf.fit(X,y)
+if H_missed_trained_nm:
+    H_missed_trained_samples = list(filter(lambda i: X_train[i,-1] == X_test[H_missed_trained[0],-1], range(len(X_train))))
+
+
+
+clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
+clf_all.fit(X,y)
+score_all = clf_all.score(X, y)
+y_pred_all = clf_all.predict(X)
+print(score_all)
+print(metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y)))
+conf_mat = metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y))
+miss_ind = np.where(y_pred_all!=y)[0]
+miss_ch = [check_list_inv[X[i,-1]] for i in miss_ind]
+miss_labels = [y[i] for i in miss_ind]
+
 #fig, ax = plt.figure(figsize=(20,10))
 fig, ax = plt.subplots(figsize=(40,10))
-tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = list(class_names.values()))
-#tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = ['a','b'])
+#tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = True);
+#tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = list(class_names.values()));
+tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = ['1','2']);
 
 #tree.plot_tree(clf)
 
 #ax.plot(x,iris[column])
+# %%============ detail analysis
+j=3
 
-i += 1
+miss_high = list(filter(lambda i: y[i]==2,miss_ind))
+miss_high_names = [check_list_inv[X[i,-1]] for i in miss_high]
+temp_SQL = fails_select.loc[fails_select['description']==miss_high_names[j]]
+
+ind_j = X[:,-1]==X[miss_high[j],-1]
+ind_m = X[miss_high,-1]==X[miss_high[j],-1]
+X_missed = X[miss_high]
+print('\nX_label= \n',X[ind_j,:])
+print('\nX_label_missed= \n',X_missed[ind_m,:])
+print(y[ind_j])
+print(miss_high_names[j])
+print(len(np.where(ind_j)[0]))
+
+#ind_clrd = np.where(fails_select['checkstatus']==3)[0]
+#for i in ind_clrd:
+#    device_id = fails_select.loc[i,'deviceid']
+#    check_id = fails_select.loc[i,'checkid']
+#    ind_rest = np.where((fails_select['deviceid']==device_id) &(fails_select['checkid']==check_id))[0]
+#    if len(ind_rest)>1:
+#        raise ValueError('len(ind_rest)>1')
+
+name = 'PING-Überprüfung'
+#name = 'Sicherungsüberprüfung'
+ind = np.where([name in str for str in fails_select['description']])[0]
+fails_select.loc[ind,'Label'].unique()
+fails_mat[ind]
+
+# %% saved interpretations
+problem_checks = ['Sicherungsüberprüfung']
+#i += 1
 # %%
 #from sklearn import tree    
 

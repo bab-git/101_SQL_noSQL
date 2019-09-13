@@ -57,6 +57,8 @@ false_SQL = false_SQL.rename(columns = head_SQL)
 wrong_checks = false_SQL.loc[(false_SQL['wrong'] == 'TRUE') | (false_SQL['H priority'] == 'NA'),'name']
 normal_checks = false_SQL.loc[false_SQL['H priority'] == 'FALSE','name']
 thresh_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & (false_SQL['thresh_type'] != ''),'name']
+High_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & (false_SQL['thresh_type'] == ''),'name']
+
 
 def H_annot(checkname,extra):
     pr = 'ND'  #not determined
@@ -64,11 +66,13 @@ def H_annot(checkname,extra):
     wrong_find =list(filter(lambda i: checkname.find(i) >=0,wrong_checks))
     normal_find =list(filter(lambda i: checkname.find(i) >=0,normal_checks))
     thresh_find =list(filter(lambda i: checkname.find(i) >=0,thresh_checks))
+    high_find =list(filter(lambda i: checkname.find(i) >=0,High_checks))    
+    
     if wrong_find:
         pr = 'ignore'    
     elif normal_find:
         pr = 'nH'
-    elif checkname.find('Terra Backup') >= 0:
+    elif high_find:
         pr = 'H'
     elif thresh_find:
         ind_1 = extra.find('t:')
@@ -450,7 +454,7 @@ DB_col_list = ['device_name','Type','checkstatus',
 #if os.path.isfile(excel_path):
 #    os.remove(excel_path)
 
-# %%===========   loop over the devices
+#  %%===========   loop over the devices
 while i < len(device_db_new):
 #while i <= len(device_db):shab mi
 #    i = 0
@@ -824,7 +828,7 @@ sheet_g.open_sheet("Sheet1", create=False)
 headers = sheet.row_values(head_ind)
 all_values = sheet.get_all_values()
 SQL_cpy = pd.DataFrame(all_values)
-#SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
+SQL_cpy.to_excel('check_back_%s.xlsx' %(str(datetime.now().timestamp())[:10]), index = False)
 
 check_SQL  = pd.DataFrame(all_values, columns = headers)    
 
@@ -847,7 +851,7 @@ if len(all_checks) > len(annot_checks):  # need to bring forward not annotated c
             
             
             if (last_annot+1) >= row_dv: # right place: after last annotation
-                moved_dv.append(temp.loc[temp.index[0],'deviceid'])
+                moved_dv.append(deviceid)
                 continue
 #            else:
 #                cond1= check_SQL.loc[list(check_SQL['description']).index(check_i)-1,'description'] not in annot_checks 
@@ -862,7 +866,7 @@ if len(all_checks) > len(annot_checks):  # need to bring forward not annotated c
                 moved_dv.append(deviceid)
                 continue                        
             else : # wrong place
-                raise ValueError('new check')
+#                raise ValueError('new check')
                 print('Bringing a not-annotated check forward - check:' , check_i)
                 row_sql = list(check_SQL['description']).index(check_i)
                 device_id = check_SQL.loc[row_sql,'deviceid']

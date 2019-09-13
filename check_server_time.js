@@ -8,11 +8,11 @@ db.getCollection('check').find(
                             "$lte": new ISODate("2019-07-31 18:59:59.000Z"),
                             "$ne": false    
                           },
-            checkstatus: {$ne:"testok"},
+            checkstatus: {$ne:"testok"},
 //               extra: /Backupjob:/
 //             checkstatus : "add",
 //             description: /Überprüfung des Dateisystemspeicherplatzes - /,
-            description: 'Überprüfung des Dateisystemspeicherplatzes - Backup',
+//             description: 'Überprüfung des Dateisystemspeicherplatzes - Backup',
 //             description: /Anti-Virus-Aktualisierungsüberprüfung - G Data Enterprise Client Engine/,
 //             description: /Leistungsüberwachung - Festplatte/,
 //             extra: /Insgesamt:/
@@ -22,9 +22,9 @@ db.getCollection('check').find(
 //             extra :{$not:/Backupjob:/}
 //             description: /Kinect/
 //             Skriptüberprüfung - Terra Backup
-//             checkid:"16879861",
+            checkid:"14041652",
 //             {description:{$not:/Anti/}},
-            deviceid:{$ne:625873},
+            deviceid:{$ne:629101},
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],
@@ -42,5 +42,5 @@ db.getCollection('check').find(
 )
 // .count()
 //     .limit(50)
-//     .sort({servertime: 1})
+    .sort({servertime: -1})
 //     .sort({deviceid: 1})
