@@ -82,7 +82,8 @@ check_DB = loaded_data['check_DB']
 #fails.drop(['description', 'servertime', 'device_name'])
 col_select = ['checkstatus','consecutiveFails','dsc247',
                                               'checkid','deviceid','Label','servertime',
-                                              'description','extra', 'last_fail']
+                                              'description','extra', 'last_fail',
+                                              'Type']
 fails_select1 = pd.DataFrame(fails, columns = col_select)
 
 fails_select2 = pd.DataFrame(check_DB, columns = col_select)
@@ -164,7 +165,7 @@ X[X[:,1]>1,1] = 2   # consfail>2 -->2
 X[(X[:,0]==2)|(X[:,0]==3) ,0] = 1   # checkstatus: testcleared , testalertdelayed == testerror
 
 # removing one-instance checks
-print('One-instance checks are removed from the database!!')
+#print('One-instance checks are removed from the database!!')
 #for i in X:
 #    if len
 
@@ -301,7 +302,9 @@ name = 'PING-Überprüfung'
 #name = 'Sicherungsüberprüfung'
 ind = np.where([name in str for str in fails_select['description']])[0]
 fails_select.loc[ind,'Label'].unique()
+temp_SQL = fails_select.loc[ind]
 fails_mat[ind]
+
 
 # %% saved interpretations
 problem_checks = ['Sicherungsüberprüfung']

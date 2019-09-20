@@ -50,14 +50,19 @@ sheet = client.open("check-short-list").sheet1
 #sheet = client.open("Checks comparison").sheet1
 list_of_false = sheet.get_all_values()
 false_SQL=pd.DataFrame(list_of_false)#, ascending = False)  
-head_SQL = pd.Series(['name','H priority','extra','wrong','thresh_type','thresh'])
-#head_SQL = false_SQL.iloc[1]
+head_SQL = pd.Series(['name','H priority','thresh_type','thresh','extra'])
+#head_SQL = sheet.row_values(1)
+
 false_SQL = false_SQL[1:]
 false_SQL = false_SQL.rename(columns = head_SQL)
-wrong_checks = false_SQL.loc[(false_SQL['wrong'] == 'TRUE') | (false_SQL['H priority'] == 'NA'),'name']
+wrong_checks = false_SQL.loc[(false_SQL['H priority'] == 'NA'),'name']
+#wrong_checks = false_SQL.loc[(false_SQL['wrong'] == 'TRUE') | (false_SQL['H priority'] == 'NA'),'name']
 normal_checks = false_SQL.loc[false_SQL['H priority'] == 'FALSE','name']
-thresh_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & (false_SQL['thresh_type'] != ''),'name']
-High_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & (false_SQL['thresh_type'] == ''),'name']
+thresh_checks = false_SQL.loc[(false_SQL['thresh_type'] != ''),'name']
+extra_checks = false_SQL.loc[(false_SQL['extra'] != ''),'name']
+#thresh_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & (false_SQL['thresh_type'] != ''),'name']
+High_checks = false_SQL.loc[(false_SQL['H priority'] == 'TRUE') & 
+                            (false_SQL['thresh_type'] == '') & (false_SQL['extra'] == ''),'name']
 
 
 def H_annot(checkname,extra):
@@ -66,6 +71,7 @@ def H_annot(checkname,extra):
     wrong_find =list(filter(lambda i: checkname.find(i) >=0,wrong_checks))
     normal_find =list(filter(lambda i: checkname.find(i) >=0,normal_checks))
     thresh_find =list(filter(lambda i: checkname.find(i) >=0,thresh_checks))
+    extra_find =list(filter(lambda i: checkname.find(i) >=0,extra_checks))
     high_find =list(filter(lambda i: checkname.find(i) >=0,High_checks))    
     
     if wrong_find:
@@ -74,6 +80,14 @@ def H_annot(checkname,extra):
         pr = 'nH'
     elif high_find:
         pr = 'H'
+    elif extra_find:
+        if checkname.find('Sicherungsüberprüfung') >= 0:
+            if extra == 'Fehler bei einer oder mehreren Aufgaben':
+                pr = 'H'
+            elif extra in {'Produkt nicht gefunden','Produkt nicht gefunden'
+                           ,'Keine Backupinformationen gefunden','Backupstatus kann nicht abgerufen werden'}:
+                pr = 'Nan'
+        
     elif thresh_find:
         ind_1 = extra.find('t:')
         if ind_1 >=0:
@@ -309,7 +323,7 @@ while i < len(device_db):
                 check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
                 i_f -= 1
 #                    print('ignore')
-            elif (pr=='nH')|(pr=='H'): # check-definite label H/N case
+            elif pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
 #                    break
                 temp = check_SQL.loc[i_f-1,DB_col_list[:len(DB_col_list)-1]]
                 temp['consecutiveFails'] = check_SQL.loc[i_f-1,'consFails']
@@ -332,7 +346,7 @@ while i < len(device_db):
     pr = H_annot(checkname,extra)
     if pr == 'ignore': # check-definite label 3 case
         check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
-    elif (pr=='nH')|(pr=='H'): # check-definite label H/N case
+    elif pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
         temp = check_SQL.loc[i_f,DB_col_list[:len(DB_col_list)-1]]
         temp['consecutiveFails'] = check_SQL.loc[i_f,'consFails']
         temp['Label'] = pr
@@ -588,7 +602,7 @@ while i < len(device_db_new):
                 check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
                 i_f -= 1
 #                    print('ignore')
-            elif (pr=='nH')|(pr=='H'): # check-definite label H/N case
+            elif pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
 #                    break
                 temp = check_SQL.loc[i_f-1,DB_col_list[:len(DB_col_list)-1]]
                 temp['consecutiveFails'] = check_SQL.loc[i_f-1,'consFails']
@@ -611,7 +625,7 @@ while i < len(device_db_new):
     pr = H_annot(checkname,extra)
     if pr == 'ignore': # check-definite label 3 case
         check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
-    elif (pr=='nH')|(pr=='H'): # check-definite label H/N case
+    elif pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
         temp = check_SQL.loc[i_f,DB_col_list[:len(DB_col_list)-1]]
         temp['consecutiveFails'] = check_SQL.loc[i_f,'consFails']
         temp['Label'] = pr
@@ -731,7 +745,7 @@ while i_check< len(sheet_checks):
 #        raise ValueError('ignore')
 #        continue    
     
-    if (pr == 'H') | (pr == 'nH'):
+    if pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
         print ('Row %d: Transfering an %s label to checkDB' %(i_check+1,pr))
 #        print (i_check)
 #        raise ValueError('H or nH')
