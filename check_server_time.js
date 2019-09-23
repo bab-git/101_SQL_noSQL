@@ -4,11 +4,12 @@ db.getCollection('check').find(
 //          [   
 //             {servertime: new ISODate("2019-06-01 01:04:55.000Z")},
             servertime: {
-                            "$gte": new ISODate("2019-06-01 15:00:00.000Z"),
-                            "$lte": new ISODate("2019-07-31 18:59:59.000Z"),
-                            "$ne": false    
+                            "$gte": new ISODate("2019-09-19 15:00:00.000Z"),
+                            "$lte": new ISODate("2019-09-20 18:59:59.000Z"),
+//                             "$ne": false    
                           },
-            checkstatus: {$ne:"testok"},
+//             checkstatus: {$ne:"testok"},
+            checkstatus: "testok_inactive",
 //               extra: /Backupjob:/
 //             checkstatus : "add",
 //             description: /Überprüfung des Dateisystemspeicherplatzes - /,
@@ -22,9 +23,9 @@ db.getCollection('check').find(
 //             extra :{$not:/Backupjob:/}
 //             description: /Kinect/
 //             Skriptüberprüfung - Terra Backup
-            checkid:"14041652",
+//             checkid:"28139343",
 //             {description:{$not:/Anti/}},
-            deviceid:{$ne:629101},
+            deviceid:531038,
 //             {deviceid:{"$gte":1035046}},
 //                dsc247: {$nin:[1,2]}
 //          ],
@@ -42,5 +43,5 @@ db.getCollection('check').find(
 )
 // .count()
 //     .limit(50)
-    .sort({servertime: -1})
+//     .sort({servertime: -1})
 //     .sort({deviceid: 1})

@@ -155,31 +155,58 @@ class_names = {1:'not High', 2:'High'}
 
 datasets = (X,y)
 #%% manual pre-processing
-ind_rmv = np.where((X[:,0]==5))[0] # testokinactive data which should be cosidered as ok
 
-X = np.delete(X,ind_rmv, axis = 0)
-y = np.delete(y,ind_rmv)
+#testok_inactive
+np.where(y[X[:,0]==5]==2)
+ind_rmv = np.where((X[:,0]==5))[0] # testok_inactive data which should be cosidered as ok
+
+#testcleard
+len(X[X[:,0]==3])
+np.where(y[X[:,0]==3]==1)
+y[X[:,0]==3]=1  # label all testcleard cases as normal
+
+
+X[X[:,0]==2,0] = 1   # checkstatus: testalertdelayed == testerror
+X[X[:,0]==3,0] = 1   # checkstatus: testcleared == testerror
+
 
 X[X[:,1]>1,1] = 2   # consfail>2 -->2
 
-X[(X[:,0]==2)|(X[:,0]==3) ,0] = 1   # checkstatus: testcleared , testalertdelayed == testerror
+X = np.delete(X,0, axis = 1)   # rmove checkstatus column
+#ind_rmv = []
 
 # removing one-instance checks
 #print('One-instance checks are removed from the database!!')
 #for i in X:
 #    if len
 
-fixed_list = ['Sicherungsüberprüfung',
+#todo: take care of hand_coded cases first!
+#todo: either train a classifier for them or hand-code the decision boundaries
+#todo: some should be unified based on the first part of the description and add the last part as another feature
+
+#Ereignisprotokollüberprüfung - Veeam Backup
+
+hand_coded_list = ['PING-Überprüfung',
+                   'Ereignisprotokollüberprüfung',
+                   'Sicherungsüberprüfung'
               ]
+#hand_ind=[]
+for id in hand_coded_list:
+#    list(filter(lambda name: name.find(id) >=0,fails_select['description']))
+    ind_temp = list(filter(lambda ind: fails_select['description'][ind].find(id) >=0,range(len(fails_select))))
+    ind_rmv = np.concatenate((ind_rmv,ind_temp))
+#    hand_ind.
+#    [i for fails_select['description'][i].find(id) >=0 ]
 
-
+X = np.delete(X,ind_rmv, axis = 0)
+y = np.delete(y,ind_rmv)
 # %% classificaiton
 #X, y = datasets
 
 # only H and nH:
-y[(y==3) | (y==1)] = 1 #'nH'
-y[y==2] = 2 #'H'
-#X_test[X_test[:,1]>1,1] = 2
+#y[(y==3) | (y==1)] = 1 #'nH'
+y[y!=2] = 1 #'H' and others
+
 #---------- knowledge based classification: pre-annot list
 #HERE!!
 
@@ -231,7 +258,7 @@ clf.fit(X_train,y_train)
 score = clf.score(X_test, y_test)
 #score = clf.score(X_train, y_train)
 print(name,' score : ',score)
-    
+
 y_pred = clf.predict(X_test)
 print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test)))
 conf_mat = metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y_test))
@@ -253,7 +280,7 @@ if H_missed_trained_nm:
     H_missed_trained_samples = list(filter(lambda i: X_train[i,-1] == X_test[H_missed_trained[0],-1], range(len(X_train))))
 
 
-
+# %%categorize all training data
 clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
 clf_all.fit(X,y)
 score_all = clf_all.score(X, y)
@@ -298,13 +325,24 @@ print(len(np.where(ind_j)[0]))
 #    if len(ind_rest)>1:
 #        raise ValueError('len(ind_rest)>1')
 
-name = 'PING-Überprüfung'
+#name = 'PING-Überprüfung'
+#name = 'Ereignisprotokollüberprüfung'
 #name = 'Sicherungsüberprüfung'
+#name = 'Sicherungsüberprüfung - Microsoft Windows 7 Backup'
+#name = 'Integritätsüberprüfung für physische Festplatte'
 ind = np.where([name in str for str in fails_select['description']])[0]
 fails_select.loc[ind,'Label'].unique()
 temp_SQL = fails_select.loc[ind]
 fails_mat[ind]
 
+
+
+
+ind = np.where(fails_select['Label']==2)[0]
+temp_SQL2= fails_select.loc[ind]
+
+ind = np.where(check_DB['Label']=='H')[0]
+temp_DB= check_DB.loc[ind]
 
 # %% saved interpretations
 problem_checks = ['Sicherungsüberprüfung']

@@ -726,7 +726,7 @@ sheet_checks  = pd.DataFrame(all_values, columns = headers)
 
 
 i_check = 0
-#  %%
+# %%
 while i_check< len(sheet_checks):
 
     g_rmd = 0
@@ -748,7 +748,8 @@ while i_check< len(sheet_checks):
     if pr != 'ND': #(pr=='nH')|(pr=='H'): # check-definite label H/N/Nan case
         print ('Row %d: Transfering an %s label to checkDB' %(i_check+1,pr))
 #        print (i_check)
-#        raise ValueError('H or nH')
+#        if pr == 'Nan':
+#            raise ValueError('H or nH or Nan')
         
         g_row = sheet.row_values(i_check+1)
         SQL_row = sheet_checks.iloc[i_check].values.tolist()
@@ -758,7 +759,6 @@ while i_check< len(sheet_checks):
             raise ValueError('SQL is not syncronized with google sheet \n update the SQL table from google-sheet')
         
         DB_col_list = check_DB.columns;
-        
         
         deviceid = int(sheet_checks.loc[i_check,'deviceid'])
 #        deviceid = 971448
@@ -801,7 +801,8 @@ while i_check< len(sheet_checks):
         check_DB3 = pd.DataFrame(check_DB.iloc[ind_add+1:])
         check_DB = pd.concat([check_DB1, check_DB2, check_DB3],  ignore_index=True)        
         
-    if (pr == 'ignore') | (pr == 'H') | (pr == 'nH'):
+#    if (pr == 'ignore') | (pr == 'H') | (pr == 'nH'):
+    if (pr != 'ND'):
         #--------- update google sheet
         i_rmv = i_check
 #        if (sheet_checks.loc[i_check+1,'deviceid'] == '') & (g_rmd == 0):
