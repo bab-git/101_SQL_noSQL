@@ -82,10 +82,12 @@ def H_annot(checkname,extra):
         pr = 'H'
     elif extra_find:
         if checkname.find('Sicherungsüberprüfung') >= 0:
-            if extra == 'Fehler bei einer oder mehreren Aufgaben':
+            if extra in {'Fehler bei einer oder mehreren Aufgaben',
+                         'Nicht ausreichend Aufgaben gefunden'}:
                 pr = 'H'
             elif extra in {'Produkt nicht gefunden','Produkt nicht gefunden'
-                           ,'Keine Backupinformationen gefunden','Backupstatus kann nicht abgerufen werden'}:
+                           ,'Keine Backupinformationen gefunden','Backupstatus kann nicht abgerufen werden',
+                           ""}:
                 pr = 'Nan'
         
     elif thresh_find:
@@ -103,21 +105,7 @@ def H_annot(checkname,extra):
                 pr = 'H'  # high P   
             else:
                 pr = 'nH'  # high P                   
-#    elif checkname.find('Festplattenspeicherüberprüfung - Laufwerk') >= 0:
-#        ind_1 = extra.find('t:')
-#        if ind_1 >=0:
-#            tot_size = extra[ind_1+2:extra.find('GB')]
-#            tot_size=float(tot_size.replace('.','').replace(',','.'))
-#           
-##            ind_F = 
-#            ext = extra[extra.find('Frei:')+5:]
-#            free_size = ext[:ext.find('GB')]
-#            free_size=float(free_size.replace('.','').replace(',','.'))
-#                        
-#            if free_size/tot_size < .2:  # 20% free threshold
-#                pr = 'H'  # high P   
-#            else:
-#                pr = 'nH'  # high P   
+
     return pr
 #%%================= test H_annot
 #    H_annot()
@@ -201,10 +189,10 @@ while i < len(device_db):
 #    i = 0
     #device_id = WK_list[i]['_id']    
     #  %%
-#    device_id = int(device_db['_id'][i])
+    device_id = int(device_db['_id'][i])
 #    device_id=int(device_db['_id'][device_db['device_name']=='SRV-PR-01'])
-    device_id = 625873
-    i = device_db.loc[device_db['_id']==device_id,'_id'].index[0]            
+#    device_id = 625873
+#    i = device_db.loc[device_db['_id']==device_id,'_id'].index[0]            
     print('\nGetting checks for device_id:',i,'/',len(device_db),'(%s)' % (device_db['device_name'][i]),'...')    
 #    del resultsd
     results = checks.find(
@@ -726,7 +714,7 @@ sheet_checks  = pd.DataFrame(all_values, columns = headers)
 
 
 i_check = 0
-# %%
+#  %%
 while i_check< len(sheet_checks):
 
     g_rmd = 0

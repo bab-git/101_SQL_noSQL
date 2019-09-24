@@ -1,87 +1,233 @@
-#import pandas as pd
-#ind_add : the row under which the entry should be added!
+def class_code(row_SQL):
+    pr = 'ND'  #not determined
+    
+    #PING-Überprüfung
+    if row_SQL['description'].find('PING-Überprüfung')>=0:
+        if row_SQL['deviceid'] in {590715,801799,1090258}:
+            pr = 'H'
+        elif row_SQL['deviceid'] in {754547,620692}:
+            pr = 'nH'
+    elif row_SQL['description'].find('Ereignisprotokollüberprüfung')>=0 & row_SQL['description'].find('Backup')>=0:
+        if row_SQL['extra'] == 'Ereignis nicht gefunden':
+            pr = 'H'
+        elif row_SQL['extra'].find('successfully')>=0:
+            pr = 'ignore'        
+            
+            
+    return pr
 
-i_check = 0
-while i_check< len(sheet_checks):
-    extra = sheet_checks['extra'][i_check]
-    if extra == '':
-        i_check +=1
+#------------------
+
+head_ind = 8
+
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("Checks list").sheet1
+
+sheet_g = Spread("Check evaluation")
+sheet_g.open_sheet("Sheet1", create=False)   
+sheet_g.sheet.resize(rows=head_ind)
+
+headers = sheet.row_values(head_ind)
+all_values = sheet.get_all_values()
+check_SQL  = pd.DataFrame(all_values, columns = headers) 
+
+all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
+
+
+#====== validation loop
+
+DB_col_list = ['device_name','Type','checkstatus',
+                                    'description','servertime','last_fail',
+                                    'client_name','site_name','extra',
+                                    'dsc247','deviceid','checkid','consecutiveFails',
+                                    'Label']
+i_dev = 0
+# %%
+while i_dev < len(device_db):
+    device_id = int(device_db['_id'][i_dev])
+    print('\nGetting checks for device_id:',i_dev,'/',len(device_db),'(%s)' % (device_db['device_name'][i_dev]),'...') 
+    results = checks.find(
+                {
+                    "servertime":
+                    {
+                                    "$gte": datetime(2019,8,1,0,0,0),
+                                    "$lte": datetime(2019,8,31,23,59,59)
+                                    },    
+                    "deviceid":device_id,
+#                    "deviceid":1054972,
+    #                "dsc247":2, 
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "26706789"
+                }
+                ,projection={'datetime': False}
+                )
+    check_results = list(results)
+    
+    len_fails = len(check_results)
+    print('number of failed checks:',len_fails)
+    if len(check_results) == 0:
+        i_dev+=1
         continue
-    checkname = sheet_checks['description'][i_check]
-    pr = H_annot(checkname,extra)
+    print('Prepaing the SQL table...')
+    check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
+                                                     'checkstatus','consecutiveFails','dsc247',
+                                                     'extra','checkid','deviceid']).sort_values(by = 
+#                                                        'servertime')#, ascending = False)
+                                                    ['checkid','servertime'])#, ascending = False)     
+   
+    temp = device_db.loc[i_dev,['device_name','client_name','site_name','Type']]
+    check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
+    check_SQL = check_SQL.reset_index(drop = True)
+    check_SQL['consFails'] = ''
+    check_SQL['last_fail'] = ''
+    check_SQL['Label'] = ''
+    check_SQL0 = check_SQL.copy()  # for debuging - todo remove
     
-    if pr == 'ignore':
-        print (i_check)
-        raise ValueError('ignore')
-        continue    
-    
-    elif (pr == 'H') | (pr == 'nH'):
-        print (i_check)
-        raise ValueError('H or nH')
+    check_current = check_SQL.loc[0,'checkid']
+    check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
+    check_SQL.loc[0,'last_fail'] = check_SQL.loc[0,'servertime']
+    dsc247 = check_SQL['dsc247'][0]
+   
+    i_f = 1    
+ #  %%   loop over the check-fail rows
+    while i_f < len(check_SQL):        
+        check_next = check_SQL.loc[i_f,'checkid']
+        checkname = check_SQL.loc[i_f,'description']
+        extra = check_SQL.loc[i_f,'extra']
         
-        g_row = sheet.row_values(i_check+1)
-        SQL_row = sheet_checks.iloc[i_check].values.tolist()
-        SQL_row = list(filter(lambda x: x != '', SQL_row))
-        
-        if g_row != SQL_row:
-            raise ValueError('SQL is not syncronized with google sheet \n update the SQL table from google-sheet')
-        
-        DB_col_list = check_DB.columns;
-        
-        
-        deviceid = int(sheet_checks.loc[i_check,'deviceid'])
-#        deviceid = 971448
-#        checkid = '30016492'
-        checkid = sheet_checks.loc[i_check,'checkid']
-        time =  datetime.strptime(sheet_checks.loc[i_check,'servertime'], '%Y-%m-%d %H:%M:%S')
-#        time = datetime(2019,7,5,15,43,16)
-        
-        dev_ind = check_DB['deviceid'] == deviceid
-        chk_ind = check_DB['checkid'] == checkid
-        tm_ind = check_DB['servertime'] > time
-        
-        if len(check_DB.loc[dev_ind].index) == 0:
-            ind_add = len(check_DB) # to the end of list
-        elif len(check_DB.loc[dev_ind & chk_ind].index) == 0:
-            ind_add = check_DB.loc[dev_ind].index[0]-1  # to the top of device list
-        elif len(check_DB.loc[dev_ind & chk_ind & tm_ind ].index) == 0:
-            ind_add = check_DB.loc[dev_ind & chk_ind].index[0]-1  # to the top of device-check list
-        else:            
-            ind_add = check_DB.loc[dev_ind & chk_ind & tm_ind ].index[0]-1  # after the device-check happened before this one
+#        if H_annot(checkname,extra) in {'ignore','nH'}: # check-definite label 1, 3 case
+        pr1 = H_annot(checkname,extra)
+        pr2 = class_code(check_SQL.loc[i_f])            
+        if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case            
+            check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+            #                print('ignore')
+#            print('continue')
+            continue
+                     
+        if check_next == check_current:  # same check
+            seq = 0  # flags the existing sequence
 
-
-        !!! HERE!!  check_DB imports lose their type!!!
-
-               
-        #--------- update check_DB                
-        if ind_add == -1:
-            ind_add =0
-        check_DB1 = pd.DataFrame(check_DB.iloc[:ind_add+1])
-        check_DB2 = pd.DataFrame(columns = DB_col_list)
-        check_DB2.loc[0] = sheet_checks.loc[i_check,DB_col_list]
-        check_DB2['Label'] = pr
-        check_DB3 = pd.DataFrame(check_DB.iloc[ind_add+1:])
-        check_DB = pd.concat([check_DB1, check_DB2, check_DB3],  ignore_index=True)
-        
-
-        
-        #--------- update google sheet
-        i_rmv = i_check
-        if sheet_checks.loc[i_check+1,'deviceid'] == '':
-            i_rmv = [i_check+1,i_check]
-            for row in i_rmv:
-                sheet.delete_row(row+1)
-        else:
-            sheet.delete_row(i_rmv+1)
+            a = check_SQL['last_fail'][i_f-1]
+            b = check_SQL['servertime'][i_f]
+            cons_b = check_SQL['consecutiveFails'][i_f]
+            cons_a = check_SQL['consecutiveFails'][i_f-1]
+            
+            if ((b - a).total_seconds() < 3.5*3600): # 2-3hr consequative errors
+                seq = 1
+            elif (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ): # next day sequence
+                if dsc247 == 2 : # safety check or consecutiveFails
+                    seq = 1
+                else:    # look for in between testok!
+                    
+                    results = checks.find(
+                                        {
+                                            "servertime": {
+                                                            "$gte": a,
+                                                            "$lte": b
+                                                            },    
+                                            "deviceid":device_id,                                
+                                            "checkstatus": "testok",
+                                            "checkid": check_current                                            }
+                                        )
+                    temp_results = list(results)
+                    if len(temp_results) == 0: # continues fail sequence
+                        seq = 1
+            if seq == 1:  # continues failing sequanece ==> clear it from the table    
+                check_SQL.loc[i_f-1,'extra'] = check_SQL.loc[i_f,'extra']
+                check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+                i_f -= 1
                 
-        #--------- update local sheet
-        sheet_checks = sheet_checks.drop(i_rmv).reset_index(drop = True)
+            check_SQL.loc[i_f,'last_fail'] = b
+            check_SQL.loc[i_f,'consFails'] = cons_b
+#            check_SQL.loc[i_f,'extra'] = extra
+        else:  # new check            
+            # adding new row
+#                break
+#                print('break')
+            dsc247 = check_SQL['dsc247'][i_f]
+            check_SQL.loc[i_f,'last_fail'] = check_SQL.loc[i_f,'servertime']
         
+        if (check_next != check_current) | (seq == 0):
+#            raise ValueError('(check_next != check_current) | (seq == 0):')
+            # categorizing previous row#                
+            checkname = check_SQL.loc[i_f-1,'description']
+            extra = check_SQL.loc[i_f-1,'extra']
+                        
+            pr1 = H_annot(checkname,extra)
+            pr2 = class_code(check_SQL.loc[i_f])
+            
+            if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case
+                check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+                i_f -= 1
+            else: # Nan or ND or H
+#                raise ValueError('end i_f')
+                if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
+                    if checkname in all_checks:
+                        pr = 'nH'
+                    else:
+                        pr = 'new'
+                else: # one of them is 'H' or 'Nan'
+                    pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+                
+                check_SQL.loc[i_f-1,'Label'] = pr
+                
+        if check_SQL['consFails'][i_f]=='':
+                check_SQL.loc[i_f,'consFails'] = check_SQL.loc[i_f,'consecutiveFails']
+        check_current = check_next                
+        i_f += 1
+#  %%
+    # -------Annotate last entry of SQL table
+#    raise ValueError('end i_f')
+    i_f = len(check_SQL)-1
+    checkname = check_SQL.loc[i_f,'description']
+    extra = check_SQL.loc[i_f,'extra']
+    
+    pr1 = H_annot(checkname,extra)
+    pr2 = class_code(check_SQL.loc[i_f])
         
-        
-        
-#        save_file = 'check_extraction.sav'
-        pickle.dump({'check_DB':check_DB}, open(load_file, 'wb'))
+    if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case
+        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+    else: # Nan or ND or H
+#        raise ValueError('end i_f')
+        if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
+            if checkname in all_checks:
+                pr = 'nH'
+            else:
+                pr = 'new'
+        else: # one of them is 'H' or 'Nan'
+            pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+                
+        check_SQL.loc[i_f,'Label'] = pr
+    #  %%        
+            
+    check_SQL_last = check_SQL[['device_name','Type','checkstatus',
+                                'description','servertime','last_fail',
+                                'client_name','site_name','extra',
+                                'dsc247','deviceid','checkid','consFails','Label']]
+    check_SQL_last = check_SQL_last.rename(columns = {"consFails":"consecutiveFails"})
+    check_SQL_last = check_SQL_last.sort_values(by = 'servertime')
+    
+    
+    #----------- save to server
+    if len(check_SQL_last) == 0:
+        print('0 checks remained to save to the excel file...')
+        i_dev += 1
         continue
     
-    i_check +=1
+    raise ValueError('to save')
+    
+    sheet_g = Spread("Check evaluation")
+    sheet_g.open_sheet("Sheet1", create=False)    
+    
+    last_row = sheet_g.sheet.row_count        
+    sheet_g.df_to_sheet(check_SQL_last, index=False, headers = False,sheet='Sheet1', 
+                        start=(last_row+2,1),  replace = False)
+    
+    print("""
+          =========== tabel saved =====
+          =============================
+          """
+          )
+    i_dev += 1  
