@@ -91,8 +91,7 @@ fails_select2 = pd.DataFrame(check_DB, columns = col_select)
 #fails_select = pd.concat([fails_select1,fails_select2], ignore_index = True)
 fails_select = fails_select1.copy()   # only not definite cases
 
-
-check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')
+check_drp = (fails_select['checkstatus']=='')|(fails_select['checkstatus']=='add')|(fails_select['Label']=='4')|(fails_select['Label']=='5')
 fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop = True)
 #fails_select=fails_select.reset_index(drop = True)
 
@@ -101,7 +100,7 @@ fails_select = fails_select.drop(fails_select[check_drp].index).reset_index(drop
 
 # convert strings to numbers
 check_stats = ['testerror','testalertdelayed','testcleared','test_inactive', 
-             'testok_inactive','testerror_inactive','testok']
+             'testok_inactive','testerror_inactive','testok','add']
 check_dic={}
 for value in range(0,len(check_stats)):
     check_dic[check_stats[value]] = value+1
@@ -156,7 +155,8 @@ y = np.array(list(fails_select['Label']))
 #class_names = {1:'Normal', 2: 'High', 3: 'ignore', 4:'on watch', 5:'nan'}
 #class_names = {1:'Normal', 2:'on watch'}
 #class_names = {'nH':'not High', 'H':'High'}
-class_names = {1:'not High', 2:'High'}
+#class_names = {1:'not High', 2:'High'}
+class_names = {1:'normal', 2:'High', 3:'ignore'}
 
 datasets = (X,y)
 #%% manual pre-processing
@@ -194,8 +194,8 @@ X = np.delete(X,0, axis = 1)   # rmove checkstatus column
 #!!! all the H cases at the moment!
 hand_coded_list = ['PING-Überprüfung',
                    'Ereignisprotokollüberprüfung',
-#                   'Sicherungsüberprüfung'
-              ]
+                   'Sicherungsüberprüfung'
+                   ]
 #hand_ind=[]
 for id in hand_coded_list:
 #    list(filter(lambda name: name.find(id) >=0,fails_select['description']))
@@ -211,7 +211,7 @@ y = np.delete(y,ind_rmv)
 
 # only H and nH:
 #y[(y==3) | (y==1)] = 1 #'nH'
-y[y!=2] = 1 #'H' and others
+#y[y!=2] = 1 #only 'H' and 'nH'
 
 #---------- knowledge based classification: pre-annot list
 #HERE!!
@@ -286,7 +286,7 @@ if H_missed_trained_nm:
     H_missed_trained_samples = list(filter(lambda i: X_train[i,-1] == X_test[H_missed_trained[0],-1], range(len(X_train))))
 
 
-# %%categorize all training data
+#  %%categorize all training data
 clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
 clf_all.fit(X,y)
 score_all = clf_all.score(X, y)
@@ -331,11 +331,12 @@ print(len(np.where(ind_j)[0]))
 #    if len(ind_rest)>1:
 #        raise ValueError('len(ind_rest)>1')
 
-name = 'PING-Überprüfung'
+#name = 'PING-Überprüfung'
 #name = 'Ereignisprotokollüberprüfung'
 #name = 'Sicherungsüberprüfung'
 #name = 'Sicherungsüberprüfung - Microsoft Windows 7 Backup'
 #name = 'Integritätsüberprüfung für physische Festplatte'
+name = 'Skriptüberprüfung'
 ind = np.where([name in str for str in fails_select['description']])[0]
 #fails_select.loc[ind,'Label'].unique()
 temp_SQL = fails_select.loc[ind]
@@ -352,7 +353,7 @@ temp_DB= check_DB.loc[ind]
 
 
 
-# %% classifier 
+# %% extract and classify the evaluation set
 
 def class_code(row_SQL):
     pr = 'ND'  #not determined
@@ -400,7 +401,7 @@ DB_col_list = ['device_name','Type','checkstatus',
                                     'dsc247','deviceid','checkid','consecutiveFails',
                                     'Label']
 i_dev = 0
-# %%
+#  %%
 while i_dev < len(device_db):
     device_id = int(device_db['_id'][i_dev])
     print('\nGetting checks for device_id:',i_dev,'/',len(device_db),'(%s)' % (device_db['device_name'][i_dev]),'...') 
@@ -587,9 +588,89 @@ while i_dev < len(device_db):
           """
           )
     i_dev += 1  
-# %% check evaluation list
+# %% feature extraction part
+name = 'Skriptüberprüfung'
 
-    
+# data preprations
+ind1 = np.where([name in str for str in fails['description']])[0]
+#fails_select.loc[ind,'Label'].unique()
+temp_SQL = fails.loc[ind1]
+
+ind2 = np.where([name in str for str in check_DB['description']])[0]
+#ind = np.where(check_DB['Label']=='H')[0]
+temp_DB= check_DB.loc[ind2]
+
+col = ['description','extra','deviceid','Type','servertime','last_fail',
+                                'dsc247','consecutiveFails',
+                                'checkstatus', 'Label']
+
+label_dic = {'H':2,'nH':1,'1':1,'2':2,'3':3}
+server_dic = {'server':1,'workstation':2}
+
+check_SQL1 = temp_SQL[col]
+check_SQL2 = temp_DB[col]
+check_SQL=pd.concat([check_SQL1,check_SQL2]).reset_index(drop = True)
+
+check_SQL['Label'] = [label_dic[a] for a in check_SQL['Label']]
+check_SQL['Type'] = [server_dic[i] for i in check_SQL['Type']]
+check_SQL[['deviceid','dsc247',
+           'consecutiveFails']] = check_SQL[['deviceid','dsc247',
+                              'consecutiveFails']].apply(pd.to_numeric, errors='coerce')
+
+check_drp = (check_SQL['checkstatus']=='add')|(check_SQL['Label']>=4)
+check_SQL = check_SQL.drop(check_SQL[check_drp].index).reset_index(drop = True)
+
+# description extraction
+key = 'Skriptüberprüfung'
+def des_split(description,key):
+    if len(description)>len(key):
+        shortened = description[len(key):]
+    else:
+        shortened = ''            
+    return shortened
+
+check_SQL['sub_description'] = [des_split(x,key) for x in check_SQL['description']]
+
+sub_names = check_SQL.sub_description.unique()
+sub_list = {}
+for value in range(0,len(sub_names)):
+    sub_list[sub_names[value]] = value+1
+#fails_select = fails_select.drop('checkid', axis = 1)
+check_SQL['sub_desc_qnt'] = [sub_list[i] for i in check_SQL['sub_description']]
+
+
+extra_names = check_SQL.extra.unique()
+ex_list = {}
+for value in range(0,len(extra_names)):
+    ex_list[extra_names[value]] = value+1
+#fails_select = fails_select.drop('checkid', axis = 1)
+check_SQL['extra_qnt'] = [ex_list[i] for i in check_SQL['extra']]
+
+feat_names = ['sub_desc_qnt','extra_qnt','deviceid','Label']
+#feat_names = ['sub_desc_qnt','extra_qnt','deviceid','consecutiveFails','Label']
+fails_mat = check_SQL[feat_names].to_numpy()
+
+X = fails_mat[:,:4]
+y = fails_mat[:,4]
+
+# -----------------classifier
+clf = DecisionTreeClassifier(max_depth = 10)
+#clf = RandomForestClassifier(max_depth = 5, n_estimators= 10, max_features = 1),
+
+clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 1)
+clf_all.fit(X,y)
+score_all = clf_all.score(X, y)
+y_pred_all = clf_all.predict(X)
+print(score_all)
+print(metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y)))
+conf_mat = metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y))
+miss_ind = np.where(y_pred_all!=y)[0]
+#miss_ch = [check_list_inv[X[i,-1]] for i in miss_ind]
+#miss_labels = [y[i] for i in miss_ind]
+
+#fig, ax = plt.figure(figsize=(20,10))
+fig, ax = plt.subplots(figsize=(40,10))
+tree.plot_tree(clf_all, filled=True, feature_names = feat_names, ax = ax , class_names = ['1','2','3']);
 
 
 
