@@ -573,7 +573,7 @@ while i_dev < len(device_db):
         continue
     
 #    raise ValueError('to save')
-    
+    print('Saving', len(check_SQL_last), 'extracted failes to the google sheet...')        
     sheet_g = Spread("Check evaluation")
     sheet_g.open_sheet("Sheet1", create=False)    
     
