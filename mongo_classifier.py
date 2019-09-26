@@ -77,6 +77,7 @@ def H_annot(checkname,extra):
     return pr
 
 # %% ================= Some coded classification rules
+#!!!! already coded in the feature selection part
 def class_code(row_SQL):
     pr = 'ND'  #not determined
     
@@ -113,41 +114,83 @@ class encoded_class:
         self.classifier = ''
         self.label = ''
 #%% ===================== Label prediction function
-head_ind = 8
+#head_ind = 8
 
-scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
-client = gspread.authorize(creds)
-sheet = client.open("Checks list").sheet1
+#scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+#creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+#client = gspread.authorize(creds)
+#sheet = client.open("Checks list").sheet1
 
-headers = sheet.row_values(head_ind)
-all_values = sheet.get_all_values()
-check_SQL  = pd.DataFrame(all_values, columns = headers) 
-all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
+#headers = sheet.row_values(head_ind)
+#all_values = sheet.get_all_values()
+#check_SQL  = pd.DataFrame(all_values, columns = headers) 
+#all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
     
-def label_pred(SQL_row):
+def label_pred(SQL_row,loaded_classifier,level):
+    # level: 1= H/nH/Nan   2= 1/2/3/Nan
+    coded_classes = loaded_classifier['coded_classes']
+    server_dic = loaded_classifier['server_dic']
+    
     checkname = SQL_row['description']
     extra = SQL_row['extra']
     
-    pr1 = H_annot(checkname,extra)
-    pr2 = class_code(SQL_row)
+    pr = H_annot(checkname,extra)
+#    pr2 = class_code(SQL_row)
     
-    if pr1 == 'ignore' or pr2 == 'ignore': # check-definite label 3 case
-        pr = 'ignore'
-    elif pr1 == 'nH' or pr2 == 'nH': # check-definite label 3 case
-        pr == 'nH'        
-    else: # Nan or ND or H
-        if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
-            if checkname in all_checks:
-                pr = 'nH'
-            else:
-                pr = 'new'
-        else: # one of them is 'H' or 'Nan'
-            pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+    if pr == 'ND': # check was not a definite case                  
+#        all_checks = coded_classes['split_name']
+        chk_found = list(filter(lambda i: coded_classes.loc[i,'split_name'] in checkname,range(len(coded_classes))))
+        if chk_found ==[]:
+            pr = 'new'
+        else:  # data was seen in trainig
+            chk_found = chk_found[0]
+            clf_data = coded_classes.iloc[chk_found]
+            if clf_data['classifier'] == '' and clf_data['score'] == 1:
+#                raise ValueError('solo class')
+                pr = int(clf_data['label'])
+            elif clf_data['classifier'] == '' and clf_data['score'] == 0:
+#                raise ValueError('Nan data- no trainig enough')
+                pr = 'Nan'
+            elif checkname in clf_data['detail']['des_solo'] or extra not in clf_data['detail']['ex_list']:
+#                raise ValueError('Nan data - not trained')
+                pr = 'Nan'
+            else: # using the trained classifier
+                                
+                SQL_row['Type'] = server_dic[SQL_row['Type']]
+                SQL_row[['deviceid','dsc247',
+                               'consecutiveFails']] = SQL_row[['deviceid','dsc247',
+                                                  'consecutiveFails']].apply(pd.to_numeric, errors='coerce')
+    
+    
+                key = clf_data['split_name']
+                sub_list = clf_data['detail']['sub_list']
+                SQL_row['sub_description'] = des_split(SQL_row['description'],key)
+                if SQL_row['sub_description'] not in sub_list:
+                    pr = 'Nan'                    
+                else:                    
+                    SQL_row['sub_desc_qnt'] = sub_list[SQL_row['sub_description']]             
+                    
+                    ex_list = clf_data['detail']['ex_list']
+                    SQL_row['extra_qnt'] = ex_list[SQL_row['extra']]
+                                    
+                    feat_names = clf_data['feat_names'] 
+                    x = SQL_row[feat_names[:len(feat_names)-1]].to_numpy()                
+                    clf = clf_data['classifier']
+                    pr = clf.predict(x.reshape(1,-1))
+                    pr = int(pr[0])
+    
+    #convert the level
+    conv_lv1 = {2:'H',1:'nH',3:'nH'}
+    conv_lv2 = {'H':2,'nH':1,'ignore':3}
+    conv_str = {'Nan':'Ned','ND':'Ned','new':'new'}
+    if isinstance(pr, str) and (pr in {'Nan','ND','new'}): #is string    
+        pr = conv_str[pr]
+    elif level==1 and isinstance(pr, int):
+            pr = conv_lv1[pr]
+    elif level==2 and isinstance(pr, str):
+            pr = conv_lv2[pr]
             
+    if level==1 and pr =='Ned':
+        pr = 'nH'
+        
     return pr
-
-
-
-
-

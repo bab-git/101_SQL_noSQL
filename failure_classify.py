@@ -620,6 +620,14 @@ feat_names = ['sub_desc_qnt','extra_qnt','Type','Label']
 #feat_names = ['sub_desc_qnt','extra_qnt','deviceid','Type','Label']
 #feat_names = ['sub_desc_qnt','extra_qnt','deviceid','consecutiveFails','Label']
 
+col = ['description','extra','deviceid','Type','servertime','last_fail',
+                                    'dsc247','consecutiveFails',
+                                    'checkstatus', 'Label']
+    
+label_dic = {'H':2,'nH':1,'1':1,'2':2,'3':3,'5':5,'Nan':5,1:1,2:2,3:3,4:4,5:5}
+server_dic = {'server':1,'workstation':2}
+    
+
 #coded_classes = []
 class_cols = ['feat_name','split_name','classifier','label','score','feat_names','detail']
 coded_classes = pd.DataFrame(columns = class_cols)
@@ -666,12 +674,7 @@ while i_name < len(all_checks):
 #    ind2 = np.where([name in str for str in check_DB['description']])[0]
 #    temp_DB= check_DB.loc[ind2]
     
-    col = ['description','extra','deviceid','Type','servertime','last_fail',
-                                    'dsc247','consecutiveFails',
-                                    'checkstatus', 'Label']
     
-    label_dic = {'H':2,'nH':1,'1':1,'2':2,'3':3,'5':5,'Nan':5}
-    server_dic = {'server':1,'workstation':2}
     
     check_SQL1 = temp_SQL[col]
 #    check_SQL2 = temp_DB[col]
@@ -768,45 +771,12 @@ while i_name < len(all_checks):
 
 coded_classes['score'] = [round(a,3) for a in coded_classes['score']]
 
-pickle.dump({'coded_classes':coded_classes}, open(save_file, 'wb'))
+pickle.dump({'coded_classes':coded_classes,'label_dic':label_dic,'server_dic':server_dic}, open(save_file, 'wb'))
 
 print ('Finished')
 
     
-# %%
-X_train, X_test, y_train, y_test = \
-        train_test_split(X,y,test_size = .2)#, random_state = 42)
-        
-# -----------------classifier
-clf = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
-#clf = RandomForestClassifier(max_depth = 5, n_estimators= 10, max_features = 1),
-clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
-
-
-clf.fit(X_train,y_train)
-score = clf.score(X_test, y_test)
-y_pred = clf.predict(X_test)
-print(score)
-print(metrics.confusion_matrix(y_test,y_pred, labels = np.unique(y)))
-miss_ind = np.where(y_pred!=y_test)[0]
-X_test[miss_ind]
-
-
-clf_all.fit(X,y)
-score_all = clf_all.score(X, y)
-y_pred_all = clf_all.predict(X)
-print(score_all)
-print(metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y)))
-conf_mat = metrics.confusion_matrix(y,y_pred_all, labels = np.unique(y))
-miss_ind_all = np.where(y_pred_all!=y)[0]
-#miss_ch = [check_list_inv[X[i,-1]] for i in miss_ind]
-#miss_labels = [y[i] for i in miss_ind]
-
-#fig, ax = plt.figure(figsize=(20,10))
-fig, ax = plt.subplots(figsize=(40,10))
-tree.plot_tree(clf_all, filled=True, feature_names = feat_names, ax = ax , class_names = ['1','2','3']);
-
-# %%feature relevance
+# %%feature relevance - test
 forest = RandomForestClassifier(n_estimators= 250, random_state = 0)
 
 forest.fit(X,y)
@@ -837,6 +807,10 @@ plt.show()
 # %% ============== Label prediction based on data from google sheet 
 #from mongo_classifier import H_annot, class_code, label_pred   # this step is necessary to update the classifier data
 
+load_file = 'trained_classifier.sav'
+loaded_classifier = pickle.load( open(load_file, "rb" ))
+#coded_classes = loaded_classifier['coded_classes']
+
 head_ind = 8        # index of the header
 label_col = 15
 
@@ -865,13 +839,38 @@ SQL_test['pred Label'] = ''
 
 # ====== classificartion loop
 i_row = 0
+level = 1 # H/nH
 while i_row < len(SQL_test):
-    SQL_row = SQL_test.iloc[i_row]
-    pr = mongo_classifier.label_pred(SQL_row)
+    SQL_row = SQL_test.iloc[i_row].copy()
+    pr = mongo_classifier.label_pred(SQL_row,loaded_classifier,level)
     SQL_test.loc[i_row,'pred Label'] = pr
     i_row += 1
         
 print ('all rows are analyzed')        
-                            
 
+#%%----- conf-matrix                            
+#pred_label = np.array(SQL_test_l2['pred Label'])
+pred_label = np.array(SQL_test['pred Label'])
+true_label = np.array(SQL_test['real label'])
+
+ind_Ned = np.where(pred_label=='Ned')
+ind_New = np.where(pred_label=='new')
+ind_remove = np.concatenate((ind_Ned,ind_New),axis = 1)
+
+ind_5 = np.where(true_label=='5')
+
+pred_label[ind_remove]=1
+#pred_label = np.delete(pred_label,ind_remove)
+#true_label = np.delete(true_label,ind_remove)
+
+true_label = [int(x) for x in true_label]
+if isinstance(pred_label[0],str):
+    pred_label = [label_dic[x] for x in pred_label]
+else:
+    pred_label = [int(x) for x in pred_label]
+
+
+    
+metrics.confusion_matrix(true_label,pred_label, labels = np.unique(true_label))
+    
 #----------- saving the results    
