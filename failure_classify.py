@@ -8,12 +8,14 @@ Analysis of the annotated data from mongoDB containing fail checks
 """
 
 print(__doc__)
+from mongo_classifier import H_annot, class_code
 import numpy as np
 import pandas as pd
 import os
 from openpyxl import load_workbook
+#from sklearn.base
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, ExtraTreesClassifier
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -353,25 +355,32 @@ temp_DB= check_DB.loc[ind]
 
 
 
-# %% extract and classify the evaluation set
+# %% ============== extract data rows from mongoDB and classify the evaluation set
+#------ safety measure
+modif_code = 'green'  # Enter this code if you really want to modify the spreadsheet
+get_code = input("DO YOU WANT TO MODIFY THE SPREAD SHEET?!\n")
+if get_code != modif_code:
+#    print('dsadsa')
+    raise ValueError('You cannot modify the spread sheet!!')
+print('Taking the backup of the google sheet and check_DB before modification...')
 
-def class_code(row_SQL):
-    pr = 'ND'  #not determined
-    
-    #PING-Überprüfung
-    if row_SQL['description'].find('PING-Überprüfung')>=0:
-        if row_SQL['deviceid'] in {590715,801799,1090258}:
-            pr = 'H'
-        elif row_SQL['deviceid'] in {754547,620692}:
-            pr = 'nH'
-    elif row_SQL['description'].find('Ereignisprotokollüberprüfung')>=0 & row_SQL['description'].find('Backup')>=0:
-        if row_SQL['extra'] == 'Ereignis nicht gefunden':
-            pr = 'H'
-        elif row_SQL['extra'].find('successfully')>=0:
-            pr = 'ignore'        
-            
-            
-    return pr
+#def class_code(row_SQL):
+#    pr = 'ND'  #not determined
+#    
+#    #PING-Überprüfung
+#    if row_SQL['description'].find('PING-Überprüfung')>=0:
+#        if row_SQL['deviceid'] in {590715,801799,1090258}:
+#            pr = 'H'
+#        elif row_SQL['deviceid'] in {754547,620692}:
+#            pr = 'nH'
+#    elif row_SQL['description'].find('Ereignisprotokollüberprüfung')>=0 & row_SQL['description'].find('Backup')>=0:
+#        if row_SQL['extra'] == 'Ereignis nicht gefunden':
+#            pr = 'H'
+#        elif row_SQL['extra'].find('successfully')>=0:
+#            pr = 'ignore'        
+#            
+#            
+#    return pr
 
 #------------------
 
@@ -646,12 +655,13 @@ for value in range(0,len(extra_names)):
 #fails_select = fails_select.drop('checkid', axis = 1)
 check_SQL['extra_qnt'] = [ex_list[i] for i in check_SQL['extra']]
 
-feat_names = ['sub_desc_qnt','extra_qnt','deviceid','Label']
+feat_names = ['sub_desc_qnt','extra_qnt','deviceid','Type','Label']
 #feat_names = ['sub_desc_qnt','extra_qnt','deviceid','consecutiveFails','Label']
 fails_mat = check_SQL[feat_names].to_numpy()
 
-X = fails_mat[:,:4]
-y = fails_mat[:,4]
+ind_label = 4;
+X = fails_mat[:,:ind_label]
+y = fails_mat[:,ind_label]
 
 # -----------------classifier
 clf = DecisionTreeClassifier(max_depth = 10)
@@ -672,65 +682,14 @@ miss_ind = np.where(y_pred_all!=y)[0]
 fig, ax = plt.subplots(figsize=(40,10))
 tree.plot_tree(clf_all, filled=True, feature_names = feat_names, ax = ax , class_names = ['1','2','3']);
 
-
-
-
-# %% ========================
-    
-#from sklearn import tree    
-
-
-#import graphviz
-#from sklearn.tree import export_graphviz
-
-#dot_data = export_graphviz(clf, out_file=None)
-#graph = graphviz.Source(dot_data) 
-#graph.render("mongo") 
-
-
-#dot_data = tree.export_graphviz(clf, out_file=None, 
-#                      feature_names=["a","b","c","d"],
-#                      class_names=["1","2","3","4"], 
-#                      filled=True, rounded=True,  
-#                      special_characters=True)  
-#graph = graphviz.Source(dot_data)  
-#graph 
-#
-#with open("mytree.dot") as f:
-#    dot_graph = f.read()
-#graphviz.Source(dot_graph)    
-#
-#
-#
-#from sklearn.tree import convert_to_graphviz
-#convert_to_graphviz(tree)
-#classifier_DT = DecisionTreeClassifier(max_depth = 5)
-##classifier_DT = OneVsRestClassifier(DecisionTreeClassifier(max_depth = 5))
-##classifier_RF = RandomForestClassifier(max_depth = 10, n_estimators= 20, max_features = 1)
-#classifier_RF = RandomForestClassifier(n_estimators= 250, random_state=0)
-#
-#classifier_DT.fit(X_train,y_train)
-#scode_DT = classifier_DT.score(X_test,y_test)
-#print('Decision tree score:',scode_DT)
-#
-#classifier_RF.fit(X_train,y_train)
-#scode_RF = classifier_RF.score(X_test,y_test)
-#print('Random Forest score:',scode_RF)
-#
-#y_pred_DT = classifier_DT.predict(X_test)
-#y_pred_RF = classifier_RF.predict(X_test)
-#
-#print("Labels:", np.unique(y_test))
-#print(metrics.confusion_matrix(y_test,y_pred_DT, labels = np.unique(y_test)))
-#metrics.confusion_matrix(y_test,y_pred_RF, labels = np.unique(y_test))
-#
-#
-#classifier_DT.fit(X,y)
-
-
 # %%feature relevance
-importance = classifier_RF.feature_importances_
-std = np.std([tree.feature_importances_ for tree in clf.estimators_], axis = 0)
+forest = RandomForestClassifier(n_estimators= 250, random_state = 0)
+
+forest.fit(X,y)
+importance = forest.feature_importances_
+
+importance = forest.feature_importances_
+std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis = 0)
 
 indices = np.argsort(importance)[::-1]
 
@@ -744,65 +703,252 @@ plt.figure()
 plt.title("Feature importances")
 plt.bar(range(X.shape[1]), importance[indices],
         color="r", yerr=std[indices], align="center")
-plt.xticks(range(X.shape[1]),indices)
+plt.xticks(feat_names[0:4],indices)
+#plt.xticks(range(X.shape[1]),indices)
 plt.xlim([-1, X.shape[1]])
 #plt.title('Extra_trees')
 plt.title('Random Forest')
 plt.show()
 
-# %% Visualization PCA / LDA / TSNE
-from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-plt.close('all')
-Xc = np.copy(X);
+# %% ============== Label prediction based on data from google sheet 
+#------ safety measure
+modif_code = 'green'  # Enter this code if you really want to modify the spreadsheet
+get_code = input("DO YOU WANT TO MODIFY THE SPREAD SHEET?!\n")
+if get_code != modif_code:
+#    print('dsadsa')
+    raise ValueError('You cannot modify the spread sheet!!')
+print('Taking the backup of the google sheet and check_DB before modification...')
 
-yc=y.copy();
+#def class_code(row_SQL):
+#    pr = 'ND'  #not determined
+#    
+#    #PING-Überprüfung
+#    if row_SQL['description'].find('PING-Überprüfung')>=0:
+#        if row_SQL['deviceid'] in {590715,801799,1090258}:
+#            pr = 'H'
+#        elif row_SQL['deviceid'] in {754547,620692}:
+#            pr = 'nH'
+#    elif row_SQL['description'].find('Ereignisprotokollüberprüfung')>=0 & row_SQL['description'].find('Backup')>=0:
+#        if row_SQL['extra'] == 'Ereignis nicht gefunden':
+#            pr = 'H'
+#        elif row_SQL['extra'].find('successfully')>=0:
+#            pr = 'ignore'        
+#            
+#            
+#    return pr
 
-target_names = list(class_names.values())
+#------------------
+
+head_ind = 8
+
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("Checks list").sheet1
+
+sheet_g = Spread("Check evaluation")
+sheet_g.open_sheet("Sheet1", create=False)   
+sheet_g.sheet.resize(rows=head_ind)
+
+headers = sheet.row_values(head_ind)
+all_values = sheet.get_all_values()
+check_SQL  = pd.DataFrame(all_values, columns = headers) 
+
+all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
 
 
-Xc[Xc[:,1]>12,1]= 12;
-yc[yc!=4]=1
-yc[yc==4]=2
-target_names = [target_names[0],target_names[3]]
+#====== validation loop
 
-pca = PCA(n_components = 2, whiten = False)
-X_r = pca.fit(Xc).transform(Xc)
-
-lda = LinearDiscriminantAnalysis(n_components=2)
-X_r2 = lda.fit(Xc,yc).transform(Xc)
-if X_r2.shape[1]==1:
-    X_r2=np.insert(X_r2,1,1,axis=1)
-# Percentage of variance explained for each components
-print('explained variance ratio (first two components): %s'
-      % str(pca.explained_variance_))
-
-fig1 = plt.figure()
-colors = ['navy', 'turquoise', 'darkorange', 'green']
-lw = 2
-
-for color, i, target_name in zip(colors,range(1,int(yc.max())+1), target_names):
-    plt.scatter(X_r[yc == i ,0], X_r[yc == i ,1], color = color, alpha = 0.8 , 
-                lw = lw, label = target_name)
-plt.legend(loc='best', shadow=False, scatterpoints=1)
-plt.title('PCA of data')
-#plt.xscale('linear')
-ax = fig1.add_subplot(111);
-for i, xy in zip(range(1,len(X_r)+1),X_r):
-    ax.annotate('% s' % i, xy = xy, textcoords = 'data') 
-
-
-fig2 = plt.figure(2)
-for color, i, target_name in zip(colors, range(1,int(yc.max())+1), target_names):
-    plt.scatter(X_r2[yc == i, 0], X_r2[yc == i, 1], alpha=.8, color=color,
-                label=target_name)
-ax = fig2.add_subplot(111);
-#for i, xy in zip(range(1,len(X_r)+1),X_r):
-#    ax.annotate('% s' % i, xy = xy, textcoords = 'data')
+DB_col_list = ['device_name','Type','checkstatus',
+                                    'description','servertime','last_fail',
+                                    'client_name','site_name','extra',
+                                    'dsc247','deviceid','checkid','consecutiveFails',
+                                    'Label']
+i_dev = 0
+#  %%
+while i_dev < len(device_db):
+    device_id = int(device_db['_id'][i_dev])
+    print('\nGetting checks for device_id:',i_dev,'/',len(device_db),'(%s)' % (device_db['device_name'][i_dev]),'...') 
+    results = checks.find(
+                {
+                    "servertime":
+                    {
+                                    "$gte": datetime(2019,8,1,0,0,0),
+                                    "$lte": datetime(2019,8,31,23,59,59)
+                                    },    
+                    "deviceid":device_id,
+#                    "deviceid":1054972,
+    #                "dsc247":2, 
+                    "checkstatus": {"$ne":"testok"},
+#                    "checkid": "26706789"
+                }
+                ,projection={'datetime': False}
+                )
+    check_results = list(results)
     
-plt.legend(loc='best', shadow=False, scatterpoints=1)
-#plt.xscale('log')
-plt.xscale('linear')
-plt.title('LDA of data')
+    len_fails = len(check_results)
+    print('number of failed checks:',len_fails)
+    if len(check_results) == 0:
+        i_dev+=1
+        continue
+    print('Prepaing the SQL table...')
+    check_SQL=pd.DataFrame(check_results, columns = ['servertime','description',
+                                                     'checkstatus','consecutiveFails','dsc247',
+                                                     'extra','checkid','deviceid']).sort_values(by = 
+#                                                        'servertime')#, ascending = False)
+                                                    ['checkid','servertime'])#, ascending = False)     
+   
+    temp = device_db.loc[i_dev,['device_name','client_name','site_name','Type']]
+    check_SQL[['device_name','client_name','site_name','Type']] = check_SQL.apply(lambda row: temp, axis = 1)      
+    check_SQL = check_SQL.reset_index(drop = True)
+    check_SQL['consFails'] = ''
+    check_SQL['last_fail'] = ''
+    check_SQL['Label'] = ''
+    check_SQL0 = check_SQL.copy()  # for debuging - todo remove
+    
+    check_current = check_SQL.loc[0,'checkid']
+    check_SQL.loc[0,'consFails'] = check_SQL.loc[0,'consecutiveFails']
+    check_SQL.loc[0,'last_fail'] = check_SQL.loc[0,'servertime']
+    dsc247 = check_SQL['dsc247'][0]
+   
+    i_f = 1    
+ #  %%   loop over the check-fail rows
+    while i_f < len(check_SQL):        
+        check_next = check_SQL.loc[i_f,'checkid']
+        checkname = check_SQL.loc[i_f,'description']
+        extra = check_SQL.loc[i_f,'extra']
+        
+#        if H_annot(checkname,extra) in {'ignore','nH'}: # check-definite label 1, 3 case
+        pr1 = H_annot(checkname,extra)
+        pr2 = class_code(check_SQL.loc[i_f])            
+        if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case            
+            check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+            #                print('ignore')
+#            print('continue')
+            continue
+                     
+        if check_next == check_current:  # same check
+            seq = 0  # flags the existing sequence
 
-plt.show()
+            a = check_SQL['last_fail'][i_f-1]
+            b = check_SQL['servertime'][i_f]
+            cons_b = check_SQL['consecutiveFails'][i_f]
+            cons_a = check_SQL['consecutiveFails'][i_f-1]
+            
+            if ((b - a).total_seconds() < 3.5*3600): # 2-3hr consequative errors
+                seq = 1
+            elif (b.day-a.day == 1 or (b.day-a.day <0 and (b-a).total_seconds() < 24*3600) ): # next day sequence
+                if dsc247 == 2 : # safety check or consecutiveFails
+                    seq = 1
+                else:    # look for in between testok!
+                    
+                    results = checks.find(
+                                        {
+                                            "servertime": {
+                                                            "$gte": a,
+                                                            "$lte": b
+                                                            },    
+                                            "deviceid":device_id,                                
+                                            "checkstatus": "testok",
+                                            "checkid": check_current                                            }
+                                        )
+                    temp_results = list(results)
+                    if len(temp_results) == 0: # continues fail sequence
+                        seq = 1
+            if seq == 1:  # continues failing sequanece ==> clear it from the table    
+                check_SQL.loc[i_f-1,'extra'] = check_SQL.loc[i_f,'extra']
+                check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+                i_f -= 1
+                
+            check_SQL.loc[i_f,'last_fail'] = b
+            check_SQL.loc[i_f,'consFails'] = cons_b
+#            check_SQL.loc[i_f,'extra'] = extra
+        else:  # new check            
+            # adding new row
+#                break
+#                print('break')
+            dsc247 = check_SQL['dsc247'][i_f]
+            check_SQL.loc[i_f,'last_fail'] = check_SQL.loc[i_f,'servertime']
+        
+        if (check_next != check_current) | (seq == 0):
+#            raise ValueError('(check_next != check_current) | (seq == 0):')
+            # categorizing previous row#                
+            checkname = check_SQL.loc[i_f-1,'description']
+            extra = check_SQL.loc[i_f-1,'extra']
+                        
+            pr1 = H_annot(checkname,extra)
+            pr2 = class_code(check_SQL.loc[i_f])
+            
+            if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case
+                check_SQL = check_SQL.drop(i_f-1).reset_index(drop = True)
+                i_f -= 1
+            else: # Nan or ND or H
+#                raise ValueError('end i_f')
+                if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
+                    if checkname in all_checks:
+                        pr = 'nH'
+                    else:
+                        pr = 'new'
+                else: # one of them is 'H' or 'Nan'
+                    pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+                
+                check_SQL.loc[i_f-1,'Label'] = pr
+                
+        if check_SQL['consFails'][i_f]=='':
+                check_SQL.loc[i_f,'consFails'] = check_SQL.loc[i_f,'consecutiveFails']
+        check_current = check_next                
+        i_f += 1
+#  %%
+    # -------Annotate last entry of SQL table
+#    raise ValueError('end i_f')
+    i_f = len(check_SQL)-1
+    checkname = check_SQL.loc[i_f,'description']
+    extra = check_SQL.loc[i_f,'extra']
+    
+    pr1 = H_annot(checkname,extra)
+    pr2 = class_code(check_SQL.loc[i_f])
+        
+    if pr1 in {'ignore','nH'} or pr2 in {'ignore','nH'}: # check-definite label 1,3 case
+        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+    else: # Nan or ND or H
+#        raise ValueError('end i_f')
+        if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
+            if checkname in all_checks:
+                pr = 'nH'
+            else:
+                pr = 'new'
+        else: # one of them is 'H' or 'Nan'
+            pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+                
+        check_SQL.loc[i_f,'Label'] = pr
+    #  %%        
+            
+    check_SQL_last = check_SQL[['device_name','Type','checkstatus',
+                                'description','servertime','last_fail',
+                                'client_name','site_name','extra',
+                                'dsc247','deviceid','checkid','consFails','Label']]
+    check_SQL_last = check_SQL_last.rename(columns = {"consFails":"consecutiveFails"})
+    check_SQL_last = check_SQL_last.sort_values(by = 'servertime')
+    
+    
+    #----------- save to server
+    if len(check_SQL_last) == 0:
+        print('0 checks remained to save to the excel file...')
+        i_dev += 1
+        continue
+    
+#    raise ValueError('to save')
+    print('Saving', len(check_SQL_last), 'extracted failes to the google sheet...')        
+    sheet_g = Spread("Check evaluation")
+    sheet_g.open_sheet("Sheet1", create=False)    
+    
+    last_row = sheet_g.sheet.row_count        
+    sheet_g.df_to_sheet(check_SQL_last, index=False, headers = False,sheet='Sheet1', 
+                        start=(last_row+2,1),  replace = False)
+    
+    print("""
+          =========== tabel saved in google sheet =====
+          =============================
+          """
+          )
+    i_dev += 1  
