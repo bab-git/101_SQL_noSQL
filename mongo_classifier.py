@@ -76,7 +76,7 @@ def H_annot(checkname,extra):
 
     return pr
 
-# %% ================= The coded classification rules
+# %% ================= Some coded classification rules
 def class_code(row_SQL):
     pr = 'ND'  #not determined
     
@@ -94,3 +94,60 @@ def class_code(row_SQL):
             
             
     return pr
+
+#%% ===================== check desctiption splitter
+def des_split(description,key):
+    if len(description)>len(key):
+        shortened = description[len(key):]
+    else:
+        shortened = ''
+    return shortened
+
+
+
+#%% ===================== encoding trained classifiers
+class encoded_class:
+    def __init__(self):
+        self.feat_name = ''
+        self.split_name = ''
+        self.classifier = ''
+        self.label = ''
+#%% ===================== Label prediction function
+head_ind = 8
+
+scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("Checks list").sheet1
+
+headers = sheet.row_values(head_ind)
+all_values = sheet.get_all_values()
+check_SQL  = pd.DataFrame(all_values, columns = headers) 
+all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
+    
+def label_pred(SQL_row):
+    checkname = SQL_row['description']
+    extra = SQL_row['extra']
+    
+    pr1 = H_annot(checkname,extra)
+    pr2 = class_code(SQL_row)
+    
+    if pr1 == 'ignore' or pr2 == 'ignore': # check-definite label 3 case
+        pr = 'ignore'
+    elif pr1 == 'nH' or pr2 == 'nH': # check-definite label 3 case
+        pr == 'nH'        
+    else: # Nan or ND or H
+        if pr1 == 'ND' and pr2 == 'ND': # not check-definite label H/Nan case
+            if checkname in all_checks:
+                pr = 'nH'
+            else:
+                pr = 'new'
+        else: # one of them is 'H' or 'Nan'
+            pr = list(filter(lambda pr: pr in {'H','Nan'}, [pr1,pr2]))[0]
+            
+    return pr
+
+
+
+
+
