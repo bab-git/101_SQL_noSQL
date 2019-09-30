@@ -1,2 +1,3 @@
 SQL_py_noSQL
-A task using both SQL and noSQL databases using mySQL workbench and python
+
+A classification task based on noSQL databases (mongoDB) writting in python.
