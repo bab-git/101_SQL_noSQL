@@ -76,26 +76,6 @@ def H_annot(checkname,extra):
 
     return pr
 
-# %% ================= Some coded classification rules
-#!!!! already coded in the feature selection part
-def class_code(row_SQL):
-    pr = 'ND'  #not determined
-    
-    #PING-Überprüfung
-    if row_SQL['description'].find('PING-Überprüfung')>=0:
-        if row_SQL['deviceid'] in {590715,801799,1090258}:
-            pr = 'H'
-        elif row_SQL['deviceid'] in {754547,620692}:
-            pr = 'nH'
-    elif row_SQL['description'].find('Ereignisprotokollüberprüfung')>=0 & row_SQL['description'].find('Backup')>=0:
-        if row_SQL['extra'] == 'Ereignis nicht gefunden':
-            pr = 'H'
-        elif row_SQL['extra'].find('successfully')>=0:
-            pr = 'ignore'        
-            
-            
-    return pr
-
 #%% ===================== check desctiption splitter
 def des_split(description,key):
     if len(description)>len(key):
@@ -114,17 +94,11 @@ class encoded_class:
         self.classifier = ''
         self.label = ''
 #%% ===================== Label prediction function
-#head_ind = 8
-
-#scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
-#creds = ServiceAccountCredentials.from_json_keyfile_name('C:/Keys/mongoDB_secret.json', scope)
-#client = gspread.authorize(creds)
-#sheet = client.open("Checks list").sheet1
-
-#headers = sheet.row_values(head_ind)
-#all_values = sheet.get_all_values()
-#check_SQL  = pd.DataFrame(all_values, columns = headers) 
-#all_checks = check_SQL.loc[range(head_ind,len(check_SQL)),'description'].unique()
+# Ned: Not enough data is available in the training phase for the given check
+# New: a completely new type of check is given
+# ignore (3): failed check should be ignored (false positive)
+# H (2): High priority failed check
+# H (1): Normal priority failed check        
     
 def label_pred(SQL_row,loaded_classifier,level):
     # level: 1= H/nH/Nan   2= 1/2/3/Nan
