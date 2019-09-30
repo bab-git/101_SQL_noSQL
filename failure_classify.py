@@ -123,7 +123,6 @@ check_names = fails_select.description.unique()
 #check_names[ind] = 'PING-Überprüfung'
 #check_names = np.unique(check_names)
 
-
 check_list = {}
 for value in range(0,len(check_names)):
     check_list[check_names[value]] = value+1
@@ -840,26 +839,41 @@ SQL_test['pred Label'] = ''
 # ====== classificartion loop
 i_row = 0
 level = 1 # H/nH
+SQL_miss= pd.DataFrame(columns = headers)
 while i_row < len(SQL_test):
     SQL_row = SQL_test.iloc[i_row].copy()
+#    SQL_row0 = SQL_row.copy()
     pr = mongo_classifier.label_pred(SQL_row,loaded_classifier,level)
     SQL_test.loc[i_row,'pred Label'] = pr
+    if pr== 'H' and SQL_row['real label']!='2':
+#        raise ValueError
+        SQL_miss = SQL_miss.append(SQL_test.iloc[i_row],ignore_index=True)
     i_row += 1
         
 print ('all rows are analyzed')        
 
 #%%----- conf-matrix                            
-#pred_label = np.array(SQL_test_l2['pred Label'])
-pred_label = np.array(SQL_test['pred Label'])
+pred_label = np.array(SQL_test_l2['pred Label'])
+#pred_label = np.array(SQL_test['pred Label'])
 true_label = np.array(SQL_test['real label'])
 
 ind_Ned = np.where(pred_label=='Ned')
 ind_New = np.where(pred_label=='new')
 ind_remove = np.concatenate((ind_Ned,ind_New),axis = 1)
 
-ind_5 = np.where(true_label=='5')
-
 pred_label[ind_remove]=1
+
+ind_5 = np.where(true_label=='5')
+pred_label = np.delete(pred_label,ind_5)
+true_label = np.delete(true_label,ind_5)
+
+ind_3 = np.where(true_label=='3')
+true_label[ind_3]='1'
+
+ind_4 = np.where(true_label=='4')
+pred_label = np.delete(pred_label,ind_4)
+true_label = np.delete(true_label,ind_4)
+
 #pred_label = np.delete(pred_label,ind_remove)
 #true_label = np.delete(true_label,ind_remove)
 
@@ -869,8 +883,4 @@ if isinstance(pred_label[0],str):
 else:
     pred_label = [int(x) for x in pred_label]
 
-
-    
 metrics.confusion_matrix(true_label,pred_label, labels = np.unique(true_label))
-    
-#----------- saving the results    
