@@ -1,6 +1,6 @@
-# SQL_py_noSQL
+# google_sheet_python_noSQL
 
-A classification task based on noSQL databases (mongoDB) writting in python.
+A classification task based on noSQL databases (mongoDB) extracted to google sheets and the decision tree algorithm which is written in python code.
 
 
 ## mongo_to_google_data_extract.py
