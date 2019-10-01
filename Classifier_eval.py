@@ -144,7 +144,7 @@ import mongo_classifier # this step is necessary to update the classifier data
 load_file = 'trained_classifier.sav'
 loaded_classifier = pickle.load( open(load_file, "rb" ))
 
-level = 1 # 1: H/nH   2: H/ N/ F
+level = 1 # 1: H/nH   2: H=2/ N=1/ F=3
 eval_sheet = "Check evaluation_test"
 
 
@@ -182,8 +182,8 @@ while i_dev < len(device_db):
                 {
                     "servertime":
                     {
-                                    "$gte": datetime(2019,8,1,0,0,0),
-                                    "$lte": datetime(2019,8,31,23,59,59)
+                                    "$gte": datetime(2019,9,1,0,0,0),
+                                    "$lte": datetime(2019,9,30,23,59,59)
                                     },    
                     "deviceid":device_id,
                     "checkstatus": {"$ne":"testok"},
@@ -225,10 +225,12 @@ while i_dev < len(device_db):
         checkname = check_SQL.loc[i_f,'description']
         extra = check_SQL.loc[i_f,'extra']
         seq = 0
-        pr = mongo_classifier.label_pred(SQL_row,loaded_classifier,level)        
-        if pr in {'ignore','nH'}: # check-definite label 1,3 case            
-            check_SQL = check_SQL.drop(i_f).reset_index(drop = True)            
-            continue
+        pr = mongo_classifier.label_pred(SQL_row,loaded_classifier,level)
+#        if pr != 'ignore':
+#            raise ValueError()        
+#        if pr in {'ignore','nH'}: # check-definite label 1,3 case            
+#            check_SQL = check_SQL.drop(i_f).reset_index(drop = True)            
+#            continue
                      
         if check_next == check_current:  # same check
             seq = 0  # flags the existing sequence
@@ -295,11 +297,11 @@ while i_dev < len(device_db):
     extra = check_SQL.loc[i_f,'extra']    
     
     SQL_row = check_SQL.iloc[i_f].copy()
-    if pr in {'ignore','nH'}: # check-definite label 1,3 case
-        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
-    else: # Nan or ND or H
+#    if pr in {'ignore','nH'}: # check-definite label 1,3 case
+#        check_SQL = check_SQL.drop(i_f).reset_index(drop = True)
+#    else: # Nan or ND or H
 #        raise ValueError('end i_f')                        
-        check_SQL.loc[i_f,'Label'] = pr
+    check_SQL.loc[i_f,'Label'] = pr
             
     check_SQL_last = check_SQL[['device_name','Type','checkstatus',
                                 'description','servertime','last_fail',
@@ -330,7 +332,7 @@ while i_dev < len(device_db):
           """
           )
     i_dev += 1  
-    
+exit() 
 #%%===========================================================================
 #% ============== B: Label prediction for data of google sheet 
 #% ===========================================================================
@@ -358,9 +360,11 @@ SQL_test  = pd.DataFrame([all_values[i] for i in valid_rows] , columns = headers
 SQL_test0 =  SQL_test.copy()
 SQL_test['pred Label'] = ''
 
+label_dic = {'H':2,'nH':1,'1':1,'2':2,'3':3,'5':5,'Nan':5,1:1,2:2,3:3,4:4,5:5}
+
 # ====== classificartion loop
 i_row = 0
-level = 1  # 1: H/nH   2: H/ N/ F
+level = 2  # 1: H/nH   2: H/ N/ F
 SQL_miss= pd.DataFrame(columns = headers)
 while i_row < len(SQL_test):
     SQL_row = SQL_test.iloc[i_row].copy()
@@ -374,8 +378,9 @@ while i_row < len(SQL_test):
         
 print ('all rows are analyzed')            
 
+case_5 = np.where(SQL_test['real label']=='5')
 
-#----- conf-matrix of the result
+#  %%----- conf-matrix of the result
 #pred_label = np.array(SQL_test_l2['pred Label'])
 pred_label = np.array(SQL_test['pred Label'])
 true_label = np.array(SQL_test['real label'])
@@ -387,6 +392,9 @@ ind_remove = np.concatenate((ind_Ned,ind_New),axis = 1)
 
 # Treating all Ned and New cases as Noraml failures
 pred_label[ind_remove]=1
+#pred_label = np.delete(pred_label,ind_remove)
+#true_label = np.delete(true_label,ind_remove)
+
 
 # Excluding all 5 cases from the analysis (failure which were not annotated)
 ind_5 = np.where(true_label=='5')

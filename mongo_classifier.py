@@ -113,6 +113,8 @@ def label_pred(SQL_row,loaded_classifier,level):
     
     if pr == 'ND': # check was not a definite case                  
 #        all_checks = coded_classes['split_name']
+#        raise ValueError
+        
         chk_found = list(filter(lambda i: coded_classes.loc[i,'split_name'] in checkname,range(len(coded_classes))))
         if chk_found ==[]:
             pr = 'new'

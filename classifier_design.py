@@ -219,6 +219,10 @@ while i_name < len(all_checks):
     clf_all = DecisionTreeClassifier(random_state = 0, min_samples_leaf = 2)
     clf_all.fit(X, y)
     score = clf_all.score(X, y)
+#    y_pred = clf_all.predict(X)
+#    conf_mat = metrics.confusion_matrix(y,y_pred, labels = np.unique(y))
+#    miss_ind = np.where(y_pred!=y)[0]
+    
     
     detail={}
     detail['sub_list'] = sub_list
@@ -235,12 +239,13 @@ pickle.dump({'coded_classes':coded_classes,'label_dic':label_dic,'server_dic':se
 
 print ('\n Finished \n')
 
-break
+#break
 # %% visualizing a chosen DT classifier
-i_clf = 3
+i_clf = 15
 
 clf = coded_classes.loc[i_clf,'classifier']
 class_names = [str(a) for a in coded_classes.loc[i_clf,'label']]
+sub_list = coded_classes.loc[i_clf,'detail']['sub_list']
 
 fig, ax = plt.subplots(figsize=(40,10))
 #tree.plot_tree(clf, filled=True, feature_names = feat_names, ax = ax , class_names = True);
